@@ -1,4 +1,4 @@
-import { calc } from './pricing.js';
+import { calc, uniqueCode } from './pricing.js';
 export const ID = /^[a-z0-9-]{1,40}$/;
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
@@ -53,7 +53,7 @@ const httpsOrLocal = url => url.protocol === 'https:' || ['localhost', '127.0.0.
 
 export async function loadCatalog(siteParam) {
   const cfg = await fetchJson('config/sites.json'), allowed = Array.isArray(cfg.allowedOrigins) ? cfg.allowedOrigins : [];
-  let id, name, catalog;
+  let id, name, catalog, home = '';
   if (ID.test(siteParam || '')) {
     if (!own(cfg.sites || {}, siteParam)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
     const s = cfg.sites[siteParam]; id = siteParam; name = String(s.name || siteParam);
@@ -66,13 +66,17 @@ export async function loadCatalog(siteParam) {
     if (!allowed.includes(u.origin)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
     if (!httpsOrLocal(u)) throw new Error('Alamat katalog harus HTTPS.');
     const segs = sitePath(u), cands = catalogCandidates(u.origin, segs);
-    id = name = u.host + segs.map(x => '/' + x).join('');
+    id = name = u.host + segs.map(x => '/' + x).join(''); home = u.origin + segs.map(x => '/' + encodeURIComponent(x)).join('') + '/';
     const res = await Promise.allSettled(cands.map(c => fetchJson(c))), i = res.findIndex(r => r.status === 'fulfilled');
     if (i < 0) throw new Error('Katalog produk tidak ditemukan. Taruh data/products.json (atau products.json) di folder halaman penjualan atau folder induknya.');
     try { catalog = validateCatalog(res[i].value); } catch (e) { throw new Error(e.message + ' (file: ' + cands[i].replace(u.origin, '') + ')'); }
   }
   if (typeof catalog.siteName === 'string' && catalog.siteName.trim()) name = catalog.siteName.trim().slice(0, 60);
-  return { site: { id, name }, catalog };
+  return { site: { id, name }, catalog, origins: allowed, home };
+}
+// Alamat "kembali ke website" hanya boleh ke origin yang terdaftar (mencegah open redirect).
+export function safeReturn(ret, origins = []) {
+  try { const u = new URL(ret); return origins.includes(u.origin) && (u.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(u.hostname)) ? u.href : null; } catch { return null; }
 }
 
 const newId = () => {
@@ -80,20 +84,22 @@ const newId = () => {
   const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
   return `FA-${ymd}-${[...r].map(x => a[x % a.length]).join('')}`;
 };
+export const orderKey = (site, pid, kid) => `fa-order:${site.id}:${pid}:${kid}`;
 export const stableId = key => { try { return sessionStorage.getItem(key) || (sessionStorage.setItem(key, newId()), sessionStorage.getItem(key)); } catch { return newId(); } };
 
 // Harga SELALU dihitung dari katalog, tidak ada angka dari URL.
-export function buildOrder(site, catalog, pid, kid, prev = {}) {
+export function buildOrder(site, catalog, pid, kid, prev = {}, admin = null) {
   if (!ID.test(pid || '') || !ID.test(kid || '')) throw new Error('ID produk atau paket tidak valid.');
   const p = own(catalog.products, pid) && catalog.products[pid];
   const k = p && own(p.packages, kid) && p.packages[kid];
   if (!k) throw new Error('Produk atau paket tidak ditemukan di katalog website.');
-  const base = `catalog.products.${pid}`;
+  const base = `catalog.products.${pid}`, id = prev.id || stableId(orderKey(site, pid, kid)), r = admin?.uniqueCode || {};
+  const code = admin && admin.ui?.features?.uniqueCode !== false ? uniqueCode(id, +r.min || 1, +r.max || 999) : 0;
   return {
-    id: prev.id || stableId(`fa-order:${site.id}:${pid}:${kid}`), site,
+    id, site,
     product: { id: pid, name: p.name, path: base + '.name' },
     pkg: { id: kid, name: k.name, path: `${base}.packages.${kid}.name`, pp: `${base}.packages.${kid}`, discount: k.discount },
-    pricing: calc(k),
+    pricing: calc(k, code),
     state: prev.state || { step: 0, method: null },
     customer: prev.customer || { name: '', wa: '', email: '', platform: 'instagram', handle: '' }
   };

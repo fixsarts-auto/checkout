@@ -15,7 +15,7 @@
   if (!site || !ID.test(site)) return console.error('[Fixs.Arts Checkout] ID website tidak terdeteksi. Tambahkan data-site="..." pada tag script.');
   const link = el => {
     const p = el.dataset.product, k = el.dataset.package;
-    return ID.test(p || '') && ID.test(k || '') ? `${CHECKOUT}?site=${site}&product=${p}&package=${k}` : null;
+    return ID.test(p || '') && ID.test(k || '') ? `${CHECKOUT}?site=${site}&product=${p}&package=${k}&ret=${encodeURIComponent(location.href)}` : null;
   };
   const init = () => document.querySelectorAll('a[data-product][data-package]').forEach(a => { const u = link(a); if (u) a.href = u; });
   document.addEventListener('click', e => {

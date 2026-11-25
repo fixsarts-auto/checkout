@@ -16,26 +16,17 @@ window.FA_ADMIN = {
     {
       "id": "bank",
       "name": "Transfer Bank",
-      "desc": "Pilih bank tujuan transfer.",
+      "desc": "SeaBank, BRI, BCA, Blu BCA",
+      "pickHint": "Pilih bank tujuan transfer.",
       "type": "account",
       "banks": [
         {
           "id": "seabank",
-          "name": "Seabank",
+          "name": "SeaBank",
           "short": "SEA",
           "color": "#f26522",
           "number": "901069371035",
           "holder": "Fikri Saputra"
-        },
-        {
-          "id": "bca",
-          "name": "BCA",
-          "short": "BCA",
-          "color": "#0060af",
-          "number": "1234567890",
-          "holder": "Nama Pemilik (contoh)",
-          "sample": true,
-          "hidden": true
         },
         {
           "id": "bri",
@@ -44,16 +35,23 @@ window.FA_ADMIN = {
           "color": "#00529c",
           "number": "213001010586506",
           "holder": "Fikri Saputra",
-          "sample": false
+          "hidden": true
         },
         {
-          "id": "mandiri",
-          "name": "Mandiri",
-          "short": "MDR",
-          "color": "#003d79",
-          "number": "3456789012",
-          "holder": "Nama Pemilik (contoh)",
-          "sample": true,
+          "id": "bca",
+          "name": "BCA",
+          "short": "BCA",
+          "color": "#0060af",
+          "number": "0512463850",
+          "holder": "Fikri Saputra"
+        },
+        {
+          "id": "blubca",
+          "name": "Blu BCA",
+          "short": "BLU",
+          "color": "#00a3e0",
+          "number": "004698348466",
+          "holder": "Fikri Saputra",
           "hidden": true
         },
         {
@@ -61,9 +59,56 @@ window.FA_ADMIN = {
           "name": "BNI",
           "short": "BNI",
           "color": "#f15a23",
-          "number": "4567890123",
-          "holder": "Nama Pemilik (contoh)",
-          "sample": true,
+          "number": "0843948944",
+          "holder": "Fikri Saputra",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ewallet",
+      "name": "E-Wallet",
+      "desc": "ShopeePay, DANA, GoPay, PayPal",
+      "pickHint": "Pilih e-wallet tujuan.",
+      "icon": "wallet",
+      "numberLabel": "No. HP",
+      "type": "account",
+      "banks": [
+        {
+          "id": "shopeepay",
+          "name": "ShopeePay",
+          "short": "SPY",
+          "color": "#ee4d2d",
+          "number": "08980332737",
+          "holder": "Fikri Saputra"
+        },
+        {
+          "id": "dana",
+          "name": "DANA",
+          "short": "DNA",
+          "color": "#118eea",
+          "number": "08980332737",
+          "holder": "Fikri Saputra",
+          "hidden": true
+        },
+        {
+          "id": "gopay",
+          "name": "GoPay",
+          "short": "GPY",
+          "color": "#00aa13",
+          "number": "08980332737",
+          "holder": "Fikri Saputra",
+          "hidden": true
+        },
+        {
+          "id": "paypal",
+          "name": "PayPal",
+          "short": "PP",
+          "color": "#003087",
+          "number": "",
+          "holder": "Fikri Saputra",
+          "url": "https://www.paypal.me/fikrispt",
+          "currency": "USD",
           "hidden": true
         }
       ]
@@ -85,7 +130,9 @@ window.FA_ADMIN = {
       "channelTiktok": true,
       "channelEmail": true,
       "collapsibleSummary": true,
-      "animations": true
+      "animations": true,
+      "uniqueCode": true,
+      "timer": true
     },
     "texts": {
       "step1": "Data",
@@ -126,6 +173,26 @@ window.FA_ADMIN = {
       "accHolder": "Atas nama",
       "save": "Simpan gambar",
       "confirmVia": "Kirim bukti pembayaran via",
+      "tDone": "Pesanan Terkirim",
+      "sDone": "Terima kasih! Admin akan memverifikasi pembayaranmu secepatnya.",
+      "tl1": "Pesanan dibuat",
+      "tl2": "Bukti pembayaran dikirim",
+      "tl3": "Verifikasi admin",
+      "tl3d": "Maksimal 1×24 jam. Mohon tunggu kabar dari admin.",
+      "tl4": "Pesanan diproses",
+      "tl4d": "Kamu akan dihubungi lewat kontak yang kamu isi.",
+      "backSite": "Kembali ke website",
+      "resend": "Kirim ulang bukti",
+      "uniqueCode": "Kode unik",
+      "uniqueNote": "Transfer tepat sampai 3 digit terakhir agar pembayaranmu mudah diverifikasi.",
+      "timerLabel": "Selesaikan pembayaran dalam",
+      "expiredT": "Waktu pembayaran habis",
+      "expiredS": "Pesanan ini sudah kedaluwarsa. Buat pesanan baru untuk melanjutkan.",
+      "newOrder": "Buat pesanan baru",
+      "accLink": "Link pembayaran",
+      "openLink": "Buka tautan pembayaran",
+      "approx": "Perkiraan",
+      "usdNote": "Nominal USD hanya perkiraan karena PayPal tidak menerima Rupiah.",
       "trust": "Datamu hanya dikirim ke admin untuk memproses pesanan."
     },
     "colors": {
@@ -152,5 +219,13 @@ window.FA_ADMIN = {
         "fld": "#f2f2f5"
       }
     }
-  }
+  },
+  "timer": {
+    "minutes": 1440
+  },
+  "uniqueCode": {
+    "min": 1,
+    "max": 999
+  },
+  "usdRate": 16500
 };

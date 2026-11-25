@@ -44,3 +44,10 @@ Mode alternatif (terdaftar): tambahkan di `sites` pada `config/sites.json`, lalu
 - "Reset gaya bank ini" dan "Reset bank ke template awal" mengembalikan ke isi `config/admin.js` yang sedang dimuat editor.
 - Setelah selesai klik "Unduh admin.js", lalu timpa `config/admin.js` di repo.
 - Bank tanpa nomor rekening tidak tampil di checkout asli.
+
+## Fitur checkout lanjutan
+- **Kode unik nominal**: 1–999 ditambahkan ke total, stabil per nomor pesanan (tampil di ringkasan, pesan WhatsApp, dan 3 digit terakhir disorot hijau). Atur rentang di `uniqueCode` (`min`/`max`) pada `config/admin.js`; matikan lewat fitur `uniqueCode`.
+- **Timer pembayaran**: hitung mundur sejak masuk langkah Konfirmasi (`timer.minutes`, bawaan 1440 = 24 jam; matikan lewat fitur `timer`). Habis waktu -> layar "Buat pesanan baru" (kode unik baru).
+- **Halaman sukses + timeline**: muncul setelah pembeli menekan kanal konfirmasi. Pesanan berjalan tersimpan di browser (maks. 72 jam) sehingga aman bila pembeli kembali dari WhatsApp. Tombol "Kembali ke website" menuju halaman asal tombol Beli (parameter `ret`, hanya origin di `allowedOrigins`) dan membersihkan data pesanan.
+- **E-Wallet & PayPal**: metode bertipe `account` dengan `numberLabel` (mis. "No. HP"). Item boleh berisi `url` (PayPal.me) dan `"currency": "USD"`; nominal dikonversi memakai `usdRate` (perkiraan, ubah manual sesuai kurs).
+- Bank/e-wallet bertanda `"hidden": true` tidak tampil (mis. BNI yang sedang tidak aktif); aktifkan lewat ikon mata di editor.

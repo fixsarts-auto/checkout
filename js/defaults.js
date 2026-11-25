@@ -26,7 +26,7 @@ export const DEFAULT_UI = {
   radius: 28,
   font: "'Plus Jakarta Sans',system-ui,sans-serif",
   features: { stepper: true, themeToggle: true, contact: true, socialMedia: true, orderNumber: true, discount: true, copyAmount: true,
-    channelWhatsapp: true, channelInstagram: true, channelTiktok: true, channelEmail: true, collapsibleSummary: true, animations: true },
+    channelWhatsapp: true, channelInstagram: true, channelTiktok: true, channelEmail: true, collapsibleSummary: true, animations: true, uniqueCode: true, timer: true },
   texts: {
     step1: 'Data', step2: 'Pembayaran', step3: 'Konfirmasi',
     t1: 'Data Pembeli', s1: 'Isi data kamu agar admin bisa menghubungi dan memproses pesanan.',
@@ -39,7 +39,13 @@ export const DEFAULT_UI = {
     sumTitle: 'Ringkasan Pesanan', sumSub: 'Pesanan diverifikasi manual oleh admin.', totalLabel: 'Total pembayaran',
     subtotal: 'Subtotal', discount: 'Diskon', orderNo: 'Nomor pesanan', buyer: 'Pembeli', method: 'Metode',
     footer: 'Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin.',
-    bankHint: 'Pilih bank tujuan transfer.', errMethod: 'Pilih metode pembayaran dulu.', errBank: 'Pilih bank tujuan dulu.', payTo: 'Tujuan pembayaran', accBank: 'Bank', accNo: 'No. rekening', accHolder: 'Atas nama', save: 'Simpan gambar', confirmVia: 'Kirim bukti pembayaran via', trust: 'Datamu hanya dikirim ke admin untuk memproses pesanan.'
+    bankHint: 'Pilih bank tujuan transfer.', errMethod: 'Pilih metode pembayaran dulu.', errBank: 'Pilih bank tujuan dulu.', payTo: 'Tujuan pembayaran', accBank: 'Bank', accNo: 'No. rekening', accHolder: 'Atas nama', save: 'Simpan gambar', confirmVia: 'Kirim bukti pembayaran via', tDone: 'Pesanan Terkirim', sDone: 'Terima kasih! Admin akan memverifikasi pembayaranmu secepatnya.',
+    tl1: 'Pesanan dibuat', tl2: 'Bukti pembayaran dikirim', tl3: 'Verifikasi admin', tl3d: 'Maksimal 1×24 jam. Mohon tunggu kabar dari admin.', tl4: 'Pesanan diproses', tl4d: 'Kamu akan dihubungi lewat kontak yang kamu isi.',
+    backSite: 'Kembali ke website', resend: 'Kirim ulang bukti',
+    uniqueCode: 'Kode unik', uniqueNote: 'Transfer tepat sampai 3 digit terakhir agar pembayaranmu mudah diverifikasi.',
+    timerLabel: 'Selesaikan pembayaran dalam', expiredT: 'Waktu pembayaran habis', expiredS: 'Pesanan ini sudah kedaluwarsa. Buat pesanan baru untuk melanjutkan.', newOrder: 'Buat pesanan baru',
+    accLink: 'Link pembayaran', openLink: 'Buka tautan pembayaran', approx: 'Perkiraan', usdNote: 'Nominal USD hanya perkiraan karena PayPal tidak menerima Rupiah.',
+    trust: 'Datamu hanya dikirim ke admin untuk memproses pesanan.'
   },
   colors: {
     dark: { bg: '#050505', panel: '#0c0c0d', side: '#171718', ink: '#f4f4f5', mut: '#85858d', ac: '#3b82f6', onac: '#ffffff', bd: '#27272b', fld: '#171718' },

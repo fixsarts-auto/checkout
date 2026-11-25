@@ -50,3 +50,5 @@ textarea{height:260px;font:.72rem/1.45 ui-monospace,monospace!important;resize:v
 .ur{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 8px}.ur .btn{display:inline-flex;align-items:center;gap:6px}.ur .ico{width:16px;height:16px}
 .cr{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.78rem;color:var(--mut);font-weight:600}.cr>span{flex:1}.pane .cr input[type=color]{width:52px;flex:none}
 .two .btn .ico{width:16px;height:16px}.two .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+
+.bksec{margin-bottom:18px}.bkt{margin:6px 0 10px}

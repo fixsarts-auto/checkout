@@ -23,7 +23,7 @@
   };
   const link = el => {
     const p = el.dataset.faProduct, k = el.dataset.faPackage;
-    return p && k ? `${CHECKOUT}?site=${encodeURIComponent(siteBase())}&product=${encodeURIComponent(p)}&package=${encodeURIComponent(k)}` : null;
+    return p && k ? `${CHECKOUT}?site=${encodeURIComponent(siteBase())}&product=${encodeURIComponent(p)}&package=${encodeURIComponent(k)}&ret=${encodeURIComponent(location.href)}` : null;
   };
   const fill = () => document.querySelectorAll('a[data-fa-product]').forEach(a => { const u = link(a); if (u) a.href = u; });
   document.addEventListener('click', e => {

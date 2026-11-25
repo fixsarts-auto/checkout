@@ -134,3 +134,55 @@ h1,.sbody h2{font-weight:600}
 .bank{padding:10px}
 
 .blogo.circle{border-radius:50%}.blogo.square{border-radius:3px}
+
+/* ===== Kode unik, timer, halaman sukses, animasi halus ===== */
+.stepbox.in{animation:none}
+.stepbox.in>*{animation:rise2 .55s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*55ms)}
+@keyframes rise2{from{opacity:0;transform:translateY(14px)}}
+.btn:active{transform:scale(.98)}
+.method,.bank,.chb,.icon-btn{transition:border-color .25s,transform .2s,background .25s,color .25s}
+.method:active,.bank:active{transform:scale(.985)}
+.sel .dot::after{animation:pop .3s cubic-bezier(.3,1.6,.5,1)}@keyframes pop{from{transform:scale(0)}}
+.icon-btn.ok{color:var(--ok)}.icon-btn.ok .ico{animation:pop .3s cubic-bezier(.3,1.6,.5,1)}
+.amt b{font-variant-numeric:tabular-nums}.uc{color:var(--ok)}
+.unote{font-size:.78rem;color:var(--mut);margin-top:6px;line-height:1.45}
+.timer{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--mut);margin-bottom:12px}
+.timer .ico{width:16px;height:16px}.timer .tlb{flex:1}
+.tv{font-variant-numeric:tabular-nums;color:var(--ink);font-size:.9rem;letter-spacing:.03em;font-weight:700}
+.tbar{display:block;height:3px;border-radius:3px;background:var(--bd);overflow:hidden;margin-top:14px}
+.tbar i{display:block;height:100%;background:var(--ok);transform-origin:left;transition:transform 1s linear,background .4s}
+.paytotal.warn .tv,.paytotal.warn .timer .ico{color:#ef5a5f}.paytotal.warn .tbar i{background:#ef5a5f}
+.dest .row .v.lnk{font-size:.85rem;word-break:break-all}
+.okmark{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);margin-bottom:18px}
+.okmark .ico{width:30px;height:30px}.okmark svg{stroke-width:2.4}
+.okmark.exp{background:color-mix(in srgb,#ef5a5f 16%,transparent);color:#ef5a5f}
+.stepbox.in .okmark{animation:pop2 .65s cubic-bezier(.3,1.5,.5,1) backwards}@keyframes pop2{from{transform:scale(.3);opacity:0}}
+.okmark:not(.exp) svg path{stroke-dasharray:30}
+.stepbox.in .okmark:not(.exp) svg path{animation:draw .6s .3s ease-out backwards}@keyframes draw{from{stroke-dashoffset:30}}
+.tl{list-style:none;padding:0;margin:22px 0}
+.tli{display:flex;gap:14px;position:relative;padding-bottom:20px}.tli:last-child{padding-bottom:0}
+.tli::before{content:"";position:absolute;left:13px;top:30px;bottom:2px;width:2px;background:var(--bd);border-radius:2px}.tli:last-child::before{display:none}
+.tli.done::before{background:var(--ok)}
+.tdot{width:28px;height:28px;border-radius:50%;border:2px solid var(--bd);display:grid;place-items:center;flex:none;background:var(--panel,var(--bg1))}
+.tdot .ico{width:14px;height:14px}.tdot svg{stroke-width:3}
+.tli.done .tdot{background:var(--ok);border-color:var(--ok);color:#fff}
+.tli.cur .tdot{border-color:var(--ac)}.tli.cur .tdot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--ac);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.55);opacity:.5}}
+.tli.todo{opacity:.55}
+.tt{display:grid;gap:1px;padding-top:3px;line-height:1.4}.tt small{color:var(--mut);font-size:.8rem}
+.stepbox.in .tli{animation:rise2 .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(.35s + var(--i,0)*140ms)}
+.acts{display:grid;gap:4px;margin-top:10px}
+.acts a.btn{text-decoration:none}
+
+/* ===== QRIS: tanpa latar putih tambahan + perbesar dengan latar buram ===== */
+.dest .qris{background:none;padding:0;min-height:0;overflow:visible}
+.dest .qris img{width:100%;height:auto;max-height:none;display:block;border-radius:16px;cursor:zoom-in;transition:transform .25s,box-shadow .25s}
+.dest .qris img:hover{transform:scale(1.015);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.dest .qris img:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+.dest .qris span{color:var(--mut);padding:24px 8px}
+.zoom{background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);cursor:zoom-out;z-index:80;padding:20px}
+.zoom img{max-width:min(92vw,640px);max-height:92vh;width:auto;height:auto;object-fit:contain;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.55);animation:zin .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes zin{from{opacity:0;transform:scale(.92)}}
+.zoom.out{opacity:0;transition:opacity .18s}
+.zclose{position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font:400 28px/1 system-ui;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.zclose:hover{background:rgba(255,255,255,.28)}

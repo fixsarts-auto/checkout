@@ -30,12 +30,12 @@ function draw() {
   fill($('pid'), Object.entries(P).map(([k, v]) => [k, v.name]), pid);
   fill($('kid'), Object.entries(K).map(([k, v]) => [k, v.name]), kid);
   if (!pid || !kid) { view.textContent = 'Tambahkan produk dan paket di tab Produk.'; return; }
-  const o = prev = buildOrder(S.site, S.catalog, pid, kid, prev);
+  const o = prev = buildOrder(S.site, S.catalog, pid, kid, prev, S.admin);
   render(view, { order: o, admin: S.admin, demo: true, toast });
   $('disc').checked = !!K[kid].discount;
   view.classList.toggle('editing', edit);
   if (edit) view.querySelectorAll('[data-path]').forEach(e => { e.contentEditable = 'plaintext-only'; if (e.contentEditable !== 'plaintext-only') e.contentEditable = 'true'; });
-  document.querySelectorAll('#stp button').forEach(b => b.classList.toggle('on', +b.dataset.s === o.state.step));
+  document.querySelectorAll('#stp button').forEach(b => b.classList.toggle('on', +b.dataset.s === (o.state.done ? 3 : o.state.step)));
   $('open').href = `index.html?site=demo&product=${pid}&package=${kid}`;
 }
 function syncInputs() {
@@ -76,8 +76,8 @@ function build() {
 
 // ================= Tab Bank: daftar bank (urut, sembunyi, hapus/tambah, logo, warna, bentuk) =================
 const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape'], bkOpen = new Set();
-const accIdx = () => S.admin.payments.findIndex(p => p.type === 'account');
-const tplBanks = () => init().admin.payments.find(p => p.type === 'account')?.banks || [];
+const accIdxs = () => S.admin.payments.map((p, i) => p.type === 'account' ? i : -1).filter(i => i >= 0);
+const tplBanks = id => init().admin.payments.find(p => p.id === id)?.banks || [];
 
 // Gambar diperkecil (maks 160px) lalu disimpan sebagai data URL di admin.js. SVG dipakai apa adanya.
 const bkFile = f => new Promise((ok, no) => {
@@ -133,7 +133,10 @@ function bkCard(b, p, j, m) {
   h.append(gp, lg, nm, eye, del, tg);
 
   const fld = (label, path, ph, max) => { const w = el('label', 'tf'), i = el('input'); i.type = 'text'; i.value = get(path) ?? ''; i.placeholder = ph || ''; if (max) i.maxLength = max; live(path, i, 'input', x => x.value); w.append(label, i); body.append(w); };
-  fld('Nomor rekening', p + '.number', 'Nomor rekening'); fld('Atas nama', p + '.holder', 'Nama pemilik rekening'); fld('Singkatan di badge (maks 3 huruf)', p + '.short', 'BCA', 3);
+  fld(m.numberLabel || 'Nomor rekening', p + '.number', m.numberLabel || 'Nomor rekening'); fld('Atas nama', p + '.holder', 'Nama pemilik');
+  fld('Link pembayaran (opsional, mis. PayPal.me)', p + '.url', 'https://www.paypal.me/namakamu');
+  const cur = el('label', 'tf'), cs = el('select'); [['', 'Rupiah (IDR)'], ['USD', 'Dolar (USD), dihitung dari kurs di tab Kontak']].forEach(([v, n]) => { const o2 = el('option', '', n); o2.value = v; o2.selected = (b.currency || '') === v; cs.append(o2); });
+  live(p + '.currency', cs, 'change', x => x.value); cur.append('Mata uang tujuan', cs); body.append(cur); fld('Singkatan di badge (maks 3 huruf)', p + '.short', 'BCA', 3);
 
   // Logo
   body.append(el('h3', '', 'Logo'));
@@ -154,7 +157,7 @@ function bkCard(b, p, j, m) {
   const sw2 = el('label', 'tf'), sel = el('select'); [['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || 'rounded') === v; sel.append(o); });
   live(p + '.shape', sel, 'change', x => x.value); sw2.append('Bentuk', sel); body.append(sw2);
   sw(body, 'Contoh (tidak tampil di checkout asli)', p + '.sample');
-  const rs = btn('btn sm', null, 'Reset gaya bank ini', () => { const t = tplBanks().find(x => x.id === b.id); for (const k of BK_STYLE) { if (t && t[k] !== undefined) b[k] = t[k]; else delete b[k]; } bkBuild(); draw(); toast('Gaya bank dikembalikan ke template.'); });
+  const rs = btn('btn sm', null, 'Reset gaya bank ini', () => { const t = tplBanks(m.id).find(x => x.id === b.id); for (const k of BK_STYLE) { if (t && t[k] !== undefined) b[k] = t[k]; else delete b[k]; } bkBuild(); draw(); toast('Gaya bank dikembalikan ke template.'); });
   rs.textContent = 'Reset gaya bank ini'; rs.style.marginTop = '8px'; body.append(rs);
 
   card.append(h, body); return card;
@@ -163,20 +166,23 @@ function bkCard(b, p, j, m) {
 function bkBuild() {
   for (const k of Object.keys(inputs)) if (k.includes('.banks.')) delete inputs[k];
   const root = $('banks'); root.replaceChildren();
-  const i = accIdx(); if (i < 0) return root.append(el('p', 'bkhint', 'Belum ada metode pembayaran bertipe "account" (Transfer Bank) di tab Kontak.'));
-  const m = S.admin.payments[i], base = `admin.payments.${i}.banks`;
+  const idx = accIdxs(); if (!idx.length) return root.append(el('p', 'bkhint', 'Belum ada metode pembayaran bertipe "account" (Transfer Bank / E-Wallet) di tab Kontak.'));
   root.append(el('p', 'bkhint', 'Seret ikon titik-titik untuk mengurutkan (atau fokus lalu tekan panah atas/bawah). Ikon mata = tampil atau sembunyikan di checkout. Panah di kanan membuka pengaturan logo, warna, dan bentuk.'));
-  const list = el('div', 'bklist'); m.banks.forEach((b, j) => { if (!b.id) b.id = uid('bank'); list.append(bkCard(b, `${base}.${j}`, j, m)); }); root.append(list);
-  bkSort(list, ids => { m.banks = ids.map(id => m.banks.find(b => b.id === id)); bkBuild(); draw(); });
-  if (!m.banks.length) root.append(el('p', 'bkhint', 'Belum ada bank. Klik "Tambah bank".'));
-  const two = el('div', 'two'), add = el('button', 'btn sm'), rs = el('button', 'btn sm');
-  add.type = rs.type = 'button'; add.append(icon('plus'), ' Tambah bank'); rs.textContent = 'Reset bank ke template awal';
-  add.onclick = () => { const b = { id: uid('bank'), name: 'Bank Baru', short: 'BNK', color: '#2563eb', textColor: '#ffffff', number: '', holder: '' }; m.banks.push(b); bkOpen.add(b.id); bkBuild(); draw();
-    const c = $('banks').querySelector(`[data-id="${b.id}"]`); c?.scrollIntoView({ block: 'nearest' }); c?.querySelector('.bkn')?.select(); };
-  rs.onclick = () => { if (!confirm('Kembalikan SEMUA bank ke template awal? Perubahan di tab Bank akan hilang.')) return; m.banks = structuredClone(tplBanks()); bkOpen.clear(); bkBuild(); draw(); toast('Bank dikembalikan ke template awal.'); };
-  two.append(add, rs); root.append(two);
+  idx.forEach(i => {
+    const m = S.admin.payments[i], base = `admin.payments.${i}.banks`, sec = el('div', 'bksec');
+    if (idx.length > 1) sec.append(el('h3', 'bkt', m.name));
+    const list = el('div', 'bklist'); m.banks.forEach((b, j) => { if (!b.id) b.id = uid('bank'); list.append(bkCard(b, `${base}.${j}`, j, m)); }); sec.append(list);
+    bkSort(list, ids => { m.banks = ids.map(id => m.banks.find(b => b.id === id)); bkBuild(); draw(); });
+    if (!m.banks.length) sec.append(el('p', 'bkhint', 'Belum ada item. Klik "Tambah".'));
+    const two = el('div', 'two'), add = el('button', 'btn sm'), rs = el('button', 'btn sm'); add.type = rs.type = 'button';
+    add.append(icon('plus'), ' Tambah'); rs.textContent = 'Reset ke template awal';
+    add.onclick = () => { const b = { id: uid('bank'), name: 'Baru', short: 'NEW', color: '#2563eb', textColor: '#ffffff', number: '', holder: '' }; m.banks.push(b); bkOpen.add(b.id); bkBuild(); draw();
+      const c = $('banks').querySelector(`[data-id="${b.id}"]`); c?.scrollIntoView({ block: 'nearest' }); c?.querySelector('.bkn')?.select(); };
+    rs.onclick = () => { if (!confirm('Kembalikan daftar "' + m.name + '" ke template awal? Perubahan di daftar ini akan hilang.')) return; m.banks = structuredClone(tplBanks(m.id)); bkOpen.clear(); bkBuild(); draw(); toast('Daftar dikembalikan ke template awal.'); };
+    two.append(add, rs); sec.append(two); root.append(sec);
+  });
 }
-function bkPreview() { const m = S.admin.payments[accIdx()]; if (m && prev.state) { prev.state.step = 1; prev.state.method = m.id; prev.state.anim = false; draw(); } }
+function bkPreview() { const m = S.admin.payments[accIdxs()[0]]; if (m && prev.state) { prev.state.step = 1; prev.state.done = false; prev.state.method = m.id; prev.state.anim = false; draw(); } }
 
 view.addEventListener('focusout', e => {
   const p = e.target.dataset?.path; if (!edit || !p) return;
@@ -209,5 +215,7 @@ $('jload').onclick = () => { $('json').value = JSON.stringify(S, null, 2); };
 $('japply').onclick = () => { try { const n = JSON.parse($('json').value); if (!n.admin || !n.catalog || !n.site) throw 0; n.admin.ui = merge(DEFAULT_UI, n.admin.ui || {}); norm(n.admin); S = n; prev = {}; redo(); toast('JSON diterapkan.'); } catch { toast('JSON tidak valid.'); } };
 $('theme').onclick = () => { toggleTheme(); draw(); };
 $('dev').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('frame').style.width = b.dataset.w; document.querySelectorAll('#dev button').forEach(x => x.classList.toggle('on', x === b)); };
-$('stp').onclick = e => { const b = e.target.closest('button'); if (!b || !prev.state) return; prev.state.step = +b.dataset.s; prev.state.anim = true; draw(); };
+$('stp').onclick = e => { const b = e.target.closest('button'); if (!b || !prev.state) return; const n = +b.dataset.s, st = prev.state;
+  if (n === 3) Object.assign(st, { step: 2, done: true, sentVia: st.sentVia || 'WhatsApp', sentAt: st.sentAt || Date.now() }); else { st.done = false; st.step = n; }
+  st.anim = true; draw(); };
 redo();
