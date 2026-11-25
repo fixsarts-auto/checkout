@@ -1,0 +1,12 @@
+{
+  "allowedOrigins": [
+    "https://fixsarts-auto.github.io",
+    "https://designjoomaax.github.io"
+  ],
+  "sites": {
+    "demo": {
+      "name": "Demo Store",
+      "catalog": "config/demo-catalog.json"
+    }
+  }
+}

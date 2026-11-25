@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor Konfigurasi · Fixs.Arts Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap">
+<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/demo.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidepanel">
+    <header class="ph"><b>Fixs.Arts Editor</b><p>Ubah apa saja, hasilnya langsung terlihat. Klik teks di pratinjau untuk mengedit di tempat.</p></header>
+    <nav class="tabs" id="tabs">
+      <button data-t="produk" class="on">Produk</button><button data-t="look">Tampilan</button><button data-t="text">Teks</button>
+      <button data-t="feat">Fitur</button><button data-t="contact">Kontak</button><button data-t="json">JSON</button>
+    </nav>
+    <div class="pane">
+      <section id="tab-produk">
+        <label class="tf">Produk<select id="pid"></select></label>
+        <label class="tf">Paket<select id="kid"></select></label>
+        <label class="swt">Diskon pada paket ini <input type="checkbox" id="disc"></label>
+        <div class="two"><button class="btn sm" id="addp">+ Produk</button><button class="btn sm" id="addk">+ Paket</button><button class="btn sm" id="delk">Hapus paket</button></div>
+        <h3>Katalog (semua harga)</h3><div id="cat"></div>
+      </section>
+      <section id="tab-look" hidden><div id="look"></div></section>
+      <section id="tab-text" hidden><input type="text" id="q" placeholder="Cari teks atau placeholder…"><div id="texts"></div></section>
+      <section id="tab-feat" hidden><div id="feats"></div></section>
+      <section id="tab-contact" hidden><div id="contact"></div></section>
+      <section id="tab-json" hidden>
+        <textarea id="json" spellcheck="false"></textarea>
+        <div class="two"><button class="btn sm" id="jload">Muat dari pratinjau</button><button class="btn sm" id="japply">Terapkan JSON</button>
+          <button class="btn sm" id="dcat">Unduh products.json</button><button class="btn sm" id="reset">Reset semua</button></div>
+      </section>
+    </div>
+  </aside>
+  <main class="stagearea">
+    <div class="toolbar">
+      <label class="swt">Mode edit <input type="checkbox" id="edit" checked></label>
+      <div class="seg" id="dev"><button data-w="100%" class="on">Desktop</button><button data-w="768px">Tablet</button><button data-w="390px">Mobile</button></div>
+      <div class="seg" id="stp"><button data-s="0" class="on">1 Data</button><button data-s="1">2 Bayar</button><button data-s="2">3 Konfirmasi</button></div>
+      <span class="grow"></span>
+      <button class="btn sm" id="theme">Tema</button><a class="btn sm" id="open" target="_blank" rel="noopener">Halaman asli</a>
+      <label class="btn sm" title="Buka admin.js atau products.json yang sudah ada">Impor JSON<input type="file" id="imp" accept=".js,.json,application/json" hidden></label>
+      <button class="btn sm pri" id="dadm">Unduh admin.js</button>
+    </div>
+    <div class="canvas"><div id="frame"><div id="view"></div></div></div>
+  </main>
+</div>
+<script src="config/admin.js"></script>
+<script src="js/demo.bundle.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "currency": "IDR",
+  "products": {
+    "logo-design": { "name": "Desain Logo", "packages": {
+      "basic": { "name": "Basic", "price": 150000 },
+      "premium": { "name": "Premium", "price": 400000, "discount": { "type": "percent", "value": 10, "label": "Promo Launching" } }
+    } },
+    "social-kit": { "name": "Social Media Kit", "packages": { "starter": { "name": "Starter", "price": 250000 } } }
+  }
+}
