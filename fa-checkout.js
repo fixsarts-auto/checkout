@@ -3,17 +3,21 @@
      <script src="https://fixsarts-auto.github.io/checkout/fa-checkout.js" defer></script>
    Tombol:
      <a data-fa-product="logo-design" data-fa-package="premium">Beli</a>
-   Opsional: data-fa-base="/" pada tag script bila website berada di root akun (nama-akun.github.io). */
+   Katalog dicari otomatis di folder halaman ini (data/products.json atau products.json), lalu folder induknya.
+  Opsional: data-fa-base="/folder/tujuan" pada tag script untuk mengunci alamat website secara manual. */
 (() => {
   const me = document.currentScript;
   const CHECKOUT = me && me.src ? new URL('./', me.src).href : 'https://fixsarts-auto.github.io/checkout/';
+  // Alamat website = folder halaman ini (boleh bersarang, mis. /home/Section/Jadwal%20Kerja/). Checkout mencari
+  // katalog dari folder ini naik ke folder induk. Pakai data-fa-base="/home" bila ingin mengunci ke satu folder.
   const siteBase = () => {
-    let path = '';
     const forced = me && me.dataset.faBase;
+    let path = '';
     if (forced != null) path = forced;
-    else if (location.hostname.endsWith('.github.io')) {
-      const seg = location.pathname.split('/')[1] || '';
-      path = seg && !/\.[a-z0-9]+$/i.test(seg) ? '/' + seg : '';
+    else {
+      const segs = location.pathname.split('/').filter(Boolean);
+      if (segs.length && /\.[a-z][a-z0-9]{0,4}$/i.test(segs[segs.length - 1])) segs.pop(); // buang nama file
+      path = segs.length ? '/' + segs.join('/') : '';
     }
     return location.origin + path.replace(/\/$/, '');
   };

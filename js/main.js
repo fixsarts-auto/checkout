@@ -21,7 +21,7 @@ let tm; const toast = m => { toastEl.textContent = m; toastEl.classList.add('sho
     if (local) { admin = admin || structuredClone(DEFAULTS.admin); s = DEFAULTS.site; catalog = validateCatalog(structuredClone(DEFAULTS.catalog)); }
     else { const r = await Promise.all([admin || fetchJson('config/admin.json'), loadCatalog(site)]); admin = r[0]; s = r[1].site; catalog = r[1].catalog; }
     document.title = `Checkout · ${admin.brand}`;
-    render(root, { order: buildOrder(s, catalog, pid, kid), admin, toast });
+    render(root, { order: buildOrder(s, catalog, pid, kid), admin, toast, showSamples: local });
     if (local) { const n = el('p', 'note', (fromJs ? 'Pratinjau lokal: pengaturan dari config/admin.js, produk memakai data contoh.' : 'Pratinjau lokal: memakai data contoh.')); root.append(n); }
   } catch (e) { renderError(root, 'Checkout tidak dapat dibuka', e.message); }
 })();

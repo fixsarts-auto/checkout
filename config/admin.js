@@ -1,4 +1,3 @@
-// Pengaturan Fixs.Arts Checkout. Dibuat dari demo.html (tombol "Unduh admin.js"), lalu timpa file ini.
 window.FA_ADMIN = {
   "brand": "Fixs.Arts Checkout",
   "wa": "6285655526686",
@@ -17,11 +16,57 @@ window.FA_ADMIN = {
     {
       "id": "bank",
       "name": "Transfer Bank",
-      "desc": "Transfer ke Rekening Tujuan.",
+      "desc": "Pilih bank tujuan transfer.",
       "type": "account",
-      "bank": "Seabank",
-      "number": "901069371035",
-      "holder": "Fikri Saputra"
+      "banks": [
+        {
+          "id": "seabank",
+          "name": "Seabank",
+          "short": "SEA",
+          "color": "#f26522",
+          "number": "901069371035",
+          "holder": "Fikri Saputra"
+        },
+        {
+          "id": "bca",
+          "name": "BCA",
+          "short": "BCA",
+          "color": "#0060af",
+          "number": "1234567890",
+          "holder": "Nama Pemilik (contoh)",
+          "sample": true,
+          "hidden": true
+        },
+        {
+          "id": "bri",
+          "name": "BRI",
+          "short": "BRI",
+          "color": "#00529c",
+          "number": "213001010586506",
+          "holder": "Fikri Saputra",
+          "sample": false
+        },
+        {
+          "id": "mandiri",
+          "name": "Mandiri",
+          "short": "MDR",
+          "color": "#003d79",
+          "number": "3456789012",
+          "holder": "Nama Pemilik (contoh)",
+          "sample": true,
+          "hidden": true
+        },
+        {
+          "id": "bni",
+          "name": "BNI",
+          "short": "BNI",
+          "color": "#f15a23",
+          "number": "4567890123",
+          "holder": "Nama Pemilik (contoh)",
+          "sample": true,
+          "hidden": true
+        }
+      ]
     }
   ],
   "ui": {
@@ -51,7 +96,7 @@ window.FA_ADMIN = {
       "t2": "Metode Pembayaran",
       "s2": "Pilih metode, lalu bayar sesuai total pesanan.",
       "t3": "Konfirmasi Pembayaran",
-      "s3": "Kirim bukti pembayaran ke admin lewat salah satu kanal di bawah.",
+      "s3": "Bayar sesuai total di bawah, lalu kirim bukti pembayaran ke admin.",
       "name": "Nama Lengkap",
       "namePh": "Nama Kamu",
       "contact": "WhatsApp/Email",
@@ -62,7 +107,7 @@ window.FA_ADMIN = {
       "toConfirm": "Lanjut ke Konfirmasi",
       "back": "Kembali",
       "done": "Sudah bayar, lanjut",
-      "payHint": "Ketuk metode untuk melihat detail pembayaran.",
+      "payHint": "Pilih metode pembayaran yang kamu inginkan.",
       "sumTitle": "Ringkasan Pesanan",
       "sumSub": "Pesanan diverifikasi manual oleh admin.",
       "totalLabel": "Total pembayaran",
@@ -71,7 +116,17 @@ window.FA_ADMIN = {
       "orderNo": "Nomor pesanan",
       "buyer": "Pembeli",
       "method": "Metode",
-      "footer": "Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin."
+      "footer": "Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin.",
+      "bankHint": "Pilih bank tujuan transfer.",
+      "errMethod": "Pilih metode pembayaran dulu.",
+      "errBank": "Pilih bank tujuan dulu.",
+      "payTo": "Tujuan pembayaran",
+      "accBank": "Bank",
+      "accNo": "No. rekening",
+      "accHolder": "Atas nama",
+      "save": "Simpan gambar",
+      "confirmVia": "Kirim bukti pembayaran via",
+      "trust": "Datamu hanya dikirim ke admin untuk memproses pesanan."
     },
     "colors": {
       "dark": {

@@ -2,12 +2,12 @@ import { rupiah } from './pricing.js';
 import { LABEL } from './icons.js';
 const q = encodeURIComponent, dg = s => String(s).replace(/\D/g, '');
 
-export function buildMessage(o, a) {
+export function buildMessage(o, a, pay = '') {
   const c = o.customer, p = o.pricing;
   return ['Halo Admin ' + a.brand + ', saya sudah melakukan pembayaran.', '',
-    `No. Pesanan: ${o.id}`, `Website: ${o.site.name} (${o.site.id})`,
+    `No. Pesanan: ${o.id}`, `Website: ${o.site.name === o.site.id ? o.site.id : o.site.name + ' (' + o.site.id + ')'}`,
     `Produk: ${o.product.name} [${o.product.id}]`, `Paket: ${o.pkg.name} [${o.pkg.id}]`,
-    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, `Total Bayar: ${rupiah(p.total)}`, '',
+    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
     `Nama: ${c.name.trim() || '-'}`,
     c.wa.trim() ? `WhatsApp: ${c.wa.trim()}` : null,
     c.email.trim() ? `Email: ${c.email.trim()}` : null,

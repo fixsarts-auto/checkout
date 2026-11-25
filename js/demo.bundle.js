@@ -27,6 +27,15 @@ const P = {
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
   qris: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/>',
   bank: '<path d="M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 20h18"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  download: '<path d="M12 4v11M7.5 11L12 15.5 16.5 11M5 20h14"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>',
+  eye: '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3 3l18 18M10.6 6.1A9.6 9.6 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.9M6.6 6.7C3.9 8.5 2 12 2 12s3.5 6 10 6c1.5 0 2.8-.3 4-.8M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>',
+  upload: '<path d="M12 16V4M7.5 8.5L12 4l4.5 4.5M5 20h14"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
@@ -65,7 +74,11 @@ const DEFAULTS = {
     note: 'Pembayaran diverifikasi manual oleh admin, maksimal 1×24 jam.',
     payments: [
       { id: 'qris', name: 'QRIS', desc: 'Scan dengan aplikasi bank atau e-wallet', type: 'image', image: 'assets/payment/qris.jpg' },
-      { id: 'bank', name: 'Transfer Bank (contoh)', desc: 'Transfer manual ke rekening', type: 'account', bank: 'BCA', number: '1234567890', holder: 'Fixs Arts' }
+      { id: 'bank', name: 'Transfer Bank', desc: 'Transfer manual ke rekening', type: 'account', banks: [
+              { id: 'bca', name: 'BCA', short: 'BCA', color: '#0060af', number: '1234567890', holder: 'Nama Pemilik (contoh)', sample: true },
+        { id: 'bri', name: 'BRI', short: 'BRI', color: '#00529c', number: '2345678901', holder: 'Nama Pemilik (contoh)', sample: true },
+        { id: 'mandiri', name: 'Mandiri', short: 'MDR', color: '#003d79', number: '3456789012', holder: 'Nama Pemilik (contoh)', sample: true },
+        { id: 'bni', name: 'BNI', short: 'BNI', color: '#f15a23', number: '4567890123', holder: 'Nama Pemilik (contoh)', sample: true } ] }
     ]
   },
   site: { id: 'demo', name: 'Demo Store' },
@@ -87,14 +100,15 @@ const DEFAULT_UI = {
     step1: 'Data', step2: 'Pembayaran', step3: 'Konfirmasi',
     t1: 'Data Pembeli', s1: 'Isi data kamu agar admin bisa menghubungi dan memproses pesanan.',
     t2: 'Metode Pembayaran', s2: 'Pilih metode, lalu bayar sesuai total pesanan.',
-    t3: 'Konfirmasi Pembayaran', s3: 'Kirim bukti pembayaran ke admin lewat salah satu kanal di bawah.',
+    t3: 'Konfirmasi Pembayaran', s3: 'Bayar sesuai total di bawah, lalu kirim bukti pembayaran ke admin.',
     name: 'Nama lengkap', namePh: 'Nama kamu', contact: 'WhatsApp/Email', contactPh: '0812 3456 7890 atau nama@email.com',
     social: 'Media Sosial (Opsional)', socialPh: '@username',
     toPay: 'Lanjut ke Pembayaran', toConfirm: 'Lanjut ke Konfirmasi', back: 'Kembali', done: 'Sudah bayar, lanjut',
-    payHint: 'Ketuk metode untuk melihat detail pembayaran.',
+    payHint: 'Pilih metode pembayaran yang kamu inginkan.',
     sumTitle: 'Ringkasan Pesanan', sumSub: 'Pesanan diverifikasi manual oleh admin.', totalLabel: 'Total pembayaran',
     subtotal: 'Subtotal', discount: 'Diskon', orderNo: 'Nomor pesanan', buyer: 'Pembeli', method: 'Metode',
-    footer: 'Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin.'
+    footer: 'Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin.',
+    bankHint: 'Pilih bank tujuan transfer.', errMethod: 'Pilih metode pembayaran dulu.', errBank: 'Pilih bank tujuan dulu.', payTo: 'Tujuan pembayaran', accBank: 'Bank', accNo: 'No. rekening', accHolder: 'Atas nama', save: 'Simpan gambar', confirmVia: 'Kirim bukti pembayaran via', trust: 'Datamu hanya dikirim ke admin untuk memproses pesanan.'
   },
   colors: {
     dark: { bg: '#050505', panel: '#0c0c0d', side: '#171718', ink: '#f4f4f5', mut: '#85858d', ac: '#3b82f6', onac: '#ffffff', bd: '#27272b', fld: '#171718' },
@@ -131,23 +145,50 @@ function validateCatalog(c) {
   return c;
 }
 
-// Katalog hanya boleh berasal dari: (1) nama terdaftar di config/sites.json ("sites"), atau
-// (2) alamat website dengan origin yang ada di "allowedOrigins" (katalog selalu di <alamat>/data/products.json).
+// Katalog hanya boleh berasal dari:
+// (1) nama terdaftar di config/sites.json ("sites"). "catalog" boleh path relatif (di repo checkout) atau URL penuh
+//     yang origin-nya ada di "allowedOrigins", atau
+// (2) alamat halaman website dengan origin yang ada di "allowedOrigins". Folder di alamat itu boleh BERSARANG
+//     (mis. /home/Section/Jadwal%20Kerja/). Katalog dicari dari folder paling dalam naik ke folder induk,
+//     dan yang pertama ketemu dipakai:  <folder>/data/products.json, lalu <folder>/products.json.
+const SEG = /^[\w.\- ()]{1,80}$/, FILE = /\.[a-z][a-z0-9]{0,4}$/i, MAX_DEPTH = 6;
+function sitePath(u) {
+  const bad = () => { throw new Error('Alamat website tidak valid.'); };
+  const segs = u.pathname.split('/').filter(Boolean).map(x => { let d; try { d = decodeURIComponent(x); } catch { bad(); } return d; });
+  if (segs.length && FILE.test(segs[segs.length - 1])) segs.pop(); // alamat halaman (…/index.html) -> foldernya
+  if (segs.length > MAX_DEPTH || segs.some(d => d === '.' || d === '..' || !SEG.test(d))) bad();
+  return segs;
+}
+const catalogCandidates = (origin, segs) => {
+  const out = [];
+  for (let k = segs.length; k >= 0; k--) {
+    const dir = origin + segs.slice(0, k).map(x => '/' + encodeURIComponent(x)).join('');
+    out.push(dir + '/data/products.json', dir + '/products.json');
+  }
+  return out;
+};
+const httpsOrLocal = url => url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname);
+
 async function loadCatalog(siteParam) {
-  const cfg = await fetchJson('config/sites.json');
-  let id, name, url;
+  const cfg = await fetchJson('config/sites.json'), allowed = Array.isArray(cfg.allowedOrigins) ? cfg.allowedOrigins : [];
+  let id, name, catalog;
   if (ID.test(siteParam || '')) {
     if (!own(cfg.sites || {}, siteParam)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
-    const s = cfg.sites[siteParam]; id = siteParam; name = String(s.name || siteParam); url = new URL(s.catalog, location.href);
+    const s = cfg.sites[siteParam]; id = siteParam; name = String(s.name || siteParam);
+    const url = new URL(s.catalog, location.href);
+    if (url.origin !== location.origin && !allowed.includes(url.origin)) throw new Error('Alamat katalog tidak diizinkan.');
+    if (!httpsOrLocal(url)) throw new Error('Alamat katalog harus HTTPS.');
+    catalog = validateCatalog(await fetchJson(url.href));
   } else {
     let u; try { u = new URL(siteParam); } catch { throw new Error('Alamat website tidak valid.'); }
-    if (!Array.isArray(cfg.allowedOrigins) || !cfg.allowedOrigins.includes(u.origin)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
-    if (!/^\/([A-Za-z0-9._-]+\/?)?$/.test(u.pathname)) throw new Error('Alamat website tidak valid.');
-    const base = u.origin + u.pathname.replace(/\/$/, '');
-    id = name = base.replace(/^https?:\/\//, ''); url = new URL(base + '/data/products.json');
+    if (!allowed.includes(u.origin)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
+    if (!httpsOrLocal(u)) throw new Error('Alamat katalog harus HTTPS.');
+    const segs = sitePath(u), cands = catalogCandidates(u.origin, segs);
+    id = name = u.host + segs.map(x => '/' + x).join('');
+    const res = await Promise.allSettled(cands.map(c => fetchJson(c))), i = res.findIndex(r => r.status === 'fulfilled');
+    if (i < 0) throw new Error('Katalog produk tidak ditemukan. Taruh data/products.json (atau products.json) di folder halaman penjualan atau folder induknya.');
+    try { catalog = validateCatalog(res[i].value); } catch (e) { throw new Error(e.message + ' (file: ' + cands[i].replace(u.origin, '') + ')'); }
   }
-  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname)) throw new Error('Alamat katalog harus HTTPS.');
-  const catalog = validateCatalog(await fetchJson(url.href));
   if (typeof catalog.siteName === 'string' && catalog.siteName.trim()) name = catalog.siteName.trim().slice(0, 60);
   return { site: { id, name }, catalog };
 }
@@ -180,12 +221,12 @@ function buildOrder(site, catalog, pid, kid, prev = {}) {
 
 const q = encodeURIComponent, dg = s => String(s).replace(/\D/g, '');
 
-function buildMessage(o, a) {
+function buildMessage(o, a, pay = '') {
   const c = o.customer, p = o.pricing;
   return ['Halo Admin ' + a.brand + ', saya sudah melakukan pembayaran.', '',
-    `No. Pesanan: ${o.id}`, `Website: ${o.site.name} (${o.site.id})`,
+    `No. Pesanan: ${o.id}`, `Website: ${o.site.name === o.site.id ? o.site.id : o.site.name + ' (' + o.site.id + ')'}`,
     `Produk: ${o.product.name} [${o.product.id}]`, `Paket: ${o.pkg.name} [${o.pkg.id}]`,
-    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, `Total Bayar: ${rupiah(p.total)}`, '',
+    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
     `Nama: ${c.name.trim() || '-'}`,
     c.wa.trim() ? `WhatsApp: ${c.wa.trim()}` : null,
     c.email.trim() ? `Email: ${c.email.trim()}` : null,
@@ -227,35 +268,34 @@ function applyUi(root, ui) {
   root.classList.toggle('noanim', !ui.features.animations);
 }
 
-// Popup detail metode (QRIS diperbesar atau data rekening)
-function openMethod(m, total, toast, root, T, onDone, F) {
-  const ov = el('div', 'ov'), box = el('div', 'modal'); ov.style.cssText = root.style.cssText;
-  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
-  const esc = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', esc); ov.onclick = e => { if (e.target === ov) close(); };
-  const head = el('div', 'mhead'), x = iconBtn('close', 'Tutup', close); head.append(el('strong', '', m.name), x); box.append(head);
-  if (m.type === 'image') {
-    const w = el('div', 'qris'), i = el('img'); i.alt = m.name; i.src = m.image;
-    i.onerror = () => w.replaceChildren(el('span', '', 'Upload gambar ke ' + m.image)); w.append(i); box.append(w);
-  } else [['Bank', m.bank], ['No. rekening', m.number], ['Atas nama', m.holder]].forEach(([k, v]) => {
-    const r = el('div', 'row'), g = el('span', 'rv');
-    if (k === 'No. rekening') g.append(iconBtn('copy', 'Salin nomor', async () => toast(await copy(String(v)) ? 'Nomor disalin.' : 'Gagal menyalin.'), 'sm'));
-    g.append(el('span', 'v', v || '-')); r.append(el('span', 'k', k), g); box.append(r);
-  });
-  const due = el('div', 'due'); due.append(el('span', 'k', 'Bayar sesuai total'));
-  if (F.copyAmount) due.append(iconBtn('copy', 'Salin nominal', async () => toast(await copy(String(total)) ? 'Nominal disalin.' : 'Gagal menyalin.'), 'sm'));
-  due.append(el('b', '', rupiah(total)));
-  const go2 = el('button', 'btn pri', T.done); go2.type = 'button'; go2.onclick = () => { close(); onDone(); };
-  box.append(due, go2); ov.append(box); document.body.append(ov); go2.focus();
-}
+// Daftar bank untuk metode transfer. Format lama (bank/number/holder langsung di metode) tetap didukung.
+// Bank bertanda sample:true hanya tampil di demo/pratinjau lokal, tidak pernah di halaman checkout asli.
+const banksOf = (m, sample) => (m.banks?.length ? m.banks.map((b, j) => ({ ...b, j })) : m.number ? [{ id: m.id, name: m.bank || m.name, number: m.number, holder: m.holder, j: -1 }] : [])
+  .filter(b => !b.hidden && (sample || (b.number && !b.sample)));
+const shapeCls = b => b.shape === 'circle' ? ' circle' : b.shape === 'square' ? ' square' : '';
+const monogram = b => {
+  const s = el('span', 'blogo mono' + shapeCls(b), (b.short || b.name || '?').slice(0, 3).toUpperCase());
+  if (b.color) s.style.background = b.color; if (b.textColor) s.style.color = b.textColor; return s;
+};
+const bankLogo = b => {
+  if (!b.logo) return monogram(b);
+  const w = el('span', 'blogo' + shapeCls(b)), i = el('img'); if (b.color) w.style.background = b.color;
+  i.alt = ''; i.src = b.logo; i.onerror = () => w.replaceWith(monogram(b)); w.append(i); return w;
+};
 
-function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
+function render(root, { order: o, admin: a, demo = false, toast = () => {}, showSamples = false }) {
   const ui = merge(DEFAULT_UI, a.ui || {}), T = ui.texts, F = ui.features, S = o.state, c = o.customer, p = o.pricing, errs = {};
-  const tp = 'admin.ui.texts.', redraw = () => render(root, { order: o, admin: a, demo, toast });
+  const tp = 'admin.ui.texts.', redraw = () => render(root, { order: o, admin: a, demo, toast, showSamples });
   const tx = (k, tag = 'span', cls) => ed(el(tag, cls, T[k]), tp + k);
   const to = n => { S.step = n; S.anim = true; redraw(); if (!demo) window.scrollTo({ top: 0, behavior: 'smooth' }); };
   root.replaceChildren(); root.classList.add('fa'); root.classList.toggle('demo', demo); applyUi(root, ui);
-  if (demo && S.step === 2 && !S.method && a.payments?.length) S.method = a.payments[0].id;
+  const sample = demo || showSamples, pays = a.payments || [];
+  const curM = () => pays.find(x => x.id === S.method);
+  const curB = () => { const m = curM(); return m && m.type === 'account' ? banksOf(m, sample).find(x => x.id === S.bank) : null; };
+  const payLabel = () => { const m = curM(), b = curB(); return m ? (b ? m.name + ' ' + b.name : m.name) : ''; };
+  let syncBuyer = () => {}, syncPay = () => {};
+  if (demo && S.step === 2 && !S.method && pays.length) S.method = pays[0].id;
+  if (demo && S.step === 2 && curM()?.type === 'account' && !curB()) S.bank = banksOf(curM(), sample)[0]?.id;
 
   // ---- panel kiri ----
   const left = el('main', 'left'), top = el('header', 'top'), tb = el('button', 'icon-btn'); tb.type = 'button'; tb.setAttribute('aria-label', 'Ganti tema');
@@ -275,7 +315,7 @@ function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
   const box = el('div', 'stepbox' + (S.anim ? ' in' : '')); S.anim = false;
   box.append(tx('t' + (S.step + 1), 'h1'), tx('s' + (S.step + 1), 'p', 'sub'));
   const back = n => { const b = el('button', 'btn ghost'); b.type = 'button'; b.append(tx('back')); b.onclick = e => { if (!e.target.isContentEditable) to(n); }; return b; };
-  const primary = (k, fn, off) => { const b = el('button', 'btn pri' + (off ? ' off' : '')); b.type = 'button'; b.append(tx(k)); b.onclick = e => { if (e.target.isContentEditable) { e.preventDefault(); return; } fn(); }; return b; };
+  const primary = (k, fn) => { const b = el('button', 'btn pri'); b.type = 'button'; b.append(tx(k)); b.onclick = e => { if (e.target.isContentEditable) { e.preventDefault(); return; } fn(); }; return b; };
 
   // Input dengan placeholder yang bisa diedit langsung di demo (overlay saat mode edit)
   const inp = (key, type, phKey, auto, labelKey, val, onin) => {
@@ -295,7 +335,7 @@ function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
 
   if (S.step === 0) {
     const f = el('form'); f.noValidate = true; f.onsubmit = e => { e.preventDefault(); if (demo || validate()) to(1); else toast('Lengkapi data dulu.'); };
-    f.append(inp('name', 'text', 'namePh', 'name', 'name', c.name, v => { c.name = v; }));
+    f.append(inp('name', 'text', 'namePh', 'name', 'name', c.name, v => { c.name = v; syncBuyer(); }));
     if (F.contact) f.append(inp('contact', 'text', 'contactPh', 'off', 'contact', c.email || c.wa, v => { if (v.includes('@')) { c.email = v; c.wa = ''; } else { c.wa = v; c.email = ''; } }));
     if (F.socialMedia) {
       const acc = el('div', 'acc' + (S.socialOpen ? ' open' : '')), hd = el('div', 'acc-h'), bd = el('div', 'acc-b'), inner = el('div', 'acc-i');
@@ -307,30 +347,87 @@ function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
         b.onclick = () => { c.platform = k; draw(); }; pf.append(b); }); };
       draw(); inner.append(inp('handle', 'text', 'socialPh', 'off', null, c.handle, v => { c.handle = v; }), pf); bd.append(inner); acc.append(hd, bd); f.append(acc);
     }
-    const sub = primary('toPay', () => {}); sub.type = 'submit'; f.append(sub); box.append(f);
+    const sub = primary('toPay', () => {}), trust = el('p', 'trust'); sub.type = 'submit'; trust.append(icon('lock'), tx('trust')); f.append(sub, trust); box.append(f);
   } else if (S.step === 1) {
     box.append(tx('payHint', 'p', 'hint'));
-    const list = el('div', 'methods');
-    (a.payments || []).forEach((m, i) => {
-      const b = el('div', 'method' + (S.method === m.id ? ' sel' : '')); b.tabIndex = 0; b.setAttribute('role', 'button');
+    const list = el('div', 'methods'), er = el('small', 'err merr'); er.setAttribute('role', 'alert');
+    pays.forEach((m, i) => {
+      const wrap = el('div', 'mwrap'), b = el('div', 'method' + (S.method === m.id ? ' sel' : '')); b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-pressed', S.method === m.id);
       const t = el('span', 'mt'); t.append(ed(el('strong', '', m.name), `admin.payments.${i}.name`), ed(el('small', '', m.desc || ''), `admin.payments.${i}.desc`));
       b.append(icon(m.icon || (m.type === 'account' ? 'bank' : 'qris')), t, el('span', 'dot'));
-      const open = e => { if (e.target.isContentEditable) return; S.method = m.id; S.anim = false; redraw(); openMethod(m, p.total, toast, root, T, () => to(2), F); };
-      b.onclick = open; b.onkeydown = e => { if (e.key === 'Enter') open(e); }; list.append(b);
+      const pick = e => {
+        if (e.target.isContentEditable || S.method === m.id) return;
+        S.method = m.id; S.bank = null; S.anim = false;
+        const bs = m.type === 'account' ? banksOf(m, sample) : []; if (bs.length === 1) S.bank = bs[0].id; S.reveal = bs.length > 0; redraw();
+      };
+      b.onclick = pick; b.onkeydown = e => { if (e.key === 'Enter') pick(e); }; wrap.append(b);
+      if (S.method === m.id && m.type === 'account') {
+        const bs = banksOf(m, sample), bp = el('div', 'banks' + (S.reveal ? ' in' : '')), g = el('div', 'bgrid'); S.reveal = false;
+        bp.append(tx('bankHint', 'p', 'bhint'));
+        bs.forEach(bk => {
+          const t2 = el('div', 'bank' + (S.bank === bk.id ? ' sel' : '')), nm = el('span', 'bn'); t2.tabIndex = 0; t2.setAttribute('role', 'button'); t2.setAttribute('aria-pressed', S.bank === bk.id);
+          const nn = el('span', '', bk.name); if (bk.j >= 0) ed(nn, `admin.payments.${i}.banks.${bk.j}.name`); nm.append(nn); if (bk.sample) nm.append(el('small', '', 'contoh'));
+          t2.append(bankLogo(bk), nm, el('span', 'dot'));
+          const sel = e => {
+            if (e.target.isContentEditable) return; S.bank = bk.id; er.textContent = '';
+            g.querySelectorAll('.bank').forEach(x => { x.classList.toggle('sel', x === t2); x.setAttribute('aria-pressed', x === t2); }); syncPay();
+          };
+          t2.onclick = sel; t2.onkeydown = e => { if (e.key === 'Enter') sel(e); }; g.append(t2);
+        });
+        if (!bs.length) g.append(el('p', 'hint', 'Belum ada rekening bank yang diatur.'));
+        bp.append(g); wrap.append(bp);
+      }
+      list.append(wrap);
     });
-    box.append(list, primary('toConfirm', () => (S.method || demo) ? to(2) : toast('Pilih metode pembayaran dulu.'), !S.method && !demo), back(0));
+    const next = () => {
+      const m = curM(), fail = msg => { er.textContent = msg; toast(msg); };
+      if (demo) return to(2);
+      if (!m) return fail(T.errMethod);
+      if (m.type === 'account' && !curB()) return fail(T.errBank);
+      to(2);
+    };
+    box.append(list, er, primary('toConfirm', next), back(0));
   } else {
-    const m = (a.payments || []).find(x => x.id === S.method), rc = el('div', 'recap');
-    const rw = (k, v) => { const r = el('div', 'row'); r.append(k instanceof Node ? k : el('span', 'k', k), el('span', 'v', v)); rc.append(r); };
+    const m = curM(), bk = curB(), pay = payLabel();
+    // 1) Total yang harus dibayar (paling atas, dengan tombol salin)
+    const hero = el('div', 'paytotal'), amt = el('div', 'amt');
+    amt.append(el('b', '', rupiah(p.total)));
+    if (F.copyAmount) amt.append(iconBtn('copy', 'Salin nominal', async () => toast(await copy(String(p.total)) ? 'Nominal disalin.' : 'Gagal menyalin.'), 'sm'));
+    hero.append(tx('totalLabel', 'span', 'k'), amt);
+    // 2) Tujuan pembayaran: gambar QRIS atau rekening bank yang dipilih
+    const dest = el('section', 'dest'), dh = el('div', 'dh');
+    if (m && m.type === 'account') dh.append(bk ? bankLogo(bk) : icon('bank'), el('strong', '', bk ? m.name + ' · ' + bk.name : m.name));
+    else dh.append(icon(m?.icon || 'qris'), el('strong', '', m ? m.name : '-'));
+    dest.append(tx('payTo', 'span', 'lb'), dh);
+    if (m && m.type === 'image') {
+      const w = el('div', 'qris'), i = el('img'); i.alt = m.name; i.src = m.image;
+      i.onerror = () => w.replaceChildren(el('span', '', 'Upload gambar ke ' + m.image)); w.append(i); dest.append(w);
+      if (m.desc) dest.append(el('p', 'hint qh', m.desc));
+      const dl = el('a', 'btn dsave'); dl.href = m.image; dl.download = (m.image || 'qris').split('/').pop(); dl.append(icon('download'), tx('save')); dest.append(dl);
+    } else if (bk) {
+      const acc = [[T.accNo, bk.number, 'num'], [T.accHolder, bk.holder]];
+      acc.forEach(([k, v, cls]) => {
+        const r = el('div', 'row'), g = el('span', 'rv');
+        if (cls) g.append(iconBtn('copy', 'Salin nomor rekening', async () => toast(await copy(String(v)) ? 'Nomor disalin.' : 'Gagal menyalin.'), 'sm'));
+        g.append(el('span', 'v ' + (cls || ''), v || '-')); r.append(el('span', 'k', k), g); dest.append(r);
+      });
+    } else dest.append(el('p', 'hint', 'Pilih metode pembayaran di langkah sebelumnya.'));
+    // 3) Ringkas data pesanan
+    const rc = el('div', 'recap'), rw = (k, v) => { const r = el('div', 'row'); r.append(k, el('span', 'v', v)); rc.append(r); };
     if (F.orderNumber) rw(tx('orderNo', 'span', 'k'), o.id);
-    rw(tx('buyer', 'span', 'k'), c.name.trim() || '-'); rw(tx('method', 'span', 'k'), m ? m.name : '-'); rw(tx('totalLabel', 'span', 'k'), rupiah(p.total));
-    const btns = el('div', 'btns'), msg = buildMessage(o, a);
-    channels(a).filter(ch => F[FEAT[ch.id]]).forEach(ch => { const b = el('button', 'btn'); b.type = 'button'; b.append(icon(ch.id), el('span', '', ch.label));
+    rw(tx('buyer', 'span', 'k'), c.name.trim() || '-');
+    // 4) Kanal konfirmasi: hanya ikon
+    const chan = el('div', 'chan'), row2 = el('div', 'chrow'), msg = buildMessage(o, a, pay);
+    chan.append(tx('confirmVia', 'span', 'lb'), row2);
+    channels(a).filter(ch => F[FEAT[ch.id]]).forEach(ch => {
+      const b = el('button', 'chb'); b.type = 'button'; b.title = ch.label; b.setAttribute('aria-label', ch.label); b.append(icon(ch.id));
       b.onclick = async () => {
         if (demo) return toast('Demo: pesan ' + ch.label + ' siap dikirim.');
         if (ch.copy) toast(await copy(msg) ? 'Pesan disalin, tempel di chat ' + ch.label + '.' : 'Gagal menyalin pesan.');
-        go(ch.url(msg, o)); }; btns.append(b); });
-    box.append(rc, btns, ed(el('p', 'hint', a.note), 'admin.note'), back(1));
+        go(ch.url(msg, o)); };
+      row2.append(b);
+    });
+    box.append(hero, dest, rc, chan, ed(el('p', 'hint', a.note), 'admin.note'), back(1));
   }
   left.append(box, tx('footer', 'p', 'foot'));
 
@@ -348,7 +445,11 @@ function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
     sb.append(row(tx('discount'), '-' + rupiah(p.disc), dl, 'disc')); }
   sb.append(el('hr'));
   if (F.orderNumber) sb.append(row(tx('orderNo'), o.id));
-  sb.append(row(tx('buyer'), c.name.trim() || '-'), el('hr'), row(tx('totalLabel'), rupiah(p.total)));
+  const rBuyer = row(tx('buyer'), c.name.trim() || '-'), rPay = row(tx('method'), payLabel() || '-');
+  syncBuyer = () => { rBuyer.hidden = !c.name.trim(); rBuyer.lastChild.textContent = c.name.trim() || '-'; };
+  syncPay = () => { rPay.hidden = !curM(); rPay.lastChild.textContent = payLabel() || '-'; };
+  syncBuyer(); syncPay();
+  sb.append(rBuyer, rPay, el('hr'), row(tx('totalLabel'), rupiah(p.total)));
   side.append(tg, sb);
 
   const shell = el('div', 'shell'); shell.append(left, side); const stage = el('div', 'stage'); stage.append(shell); root.append(stage);
@@ -359,13 +460,17 @@ function render(root, { order: o, admin: a, demo = false, toast = () => {} }) {
 
 
 
+
 const $ = id => document.getElementById(id);
-const init = () => { const s = structuredClone(DEFAULTS); if (window.FA_ADMIN) s.admin = structuredClone(window.FA_ADMIN); s.admin.ui = merge(DEFAULT_UI, s.admin.ui || {}); return s; };
+const uid = p => p + '-' + Math.random().toString(36).slice(2, 6);
+// Format lama (bank/number/holder langsung di metode) diubah menjadi daftar banks agar bisa diatur di tab Bank.
+const norm = a => { for (const m of a.payments || []) if (m.type === 'account' && !Array.isArray(m.banks)) {
+  m.banks = m.number ? [{ id: uid('bank'), name: m.bank || m.name, short: String(m.bank || m.name).slice(0, 3).toUpperCase(), number: m.number, holder: m.holder }] : []; delete m.bank; delete m.number; delete m.holder; } return a; };
+const init = () => { const s = structuredClone(DEFAULTS); if (window.FA_ADMIN) s.admin = structuredClone(window.FA_ADMIN); s.admin.ui = merge(DEFAULT_UI, s.admin.ui || {}); norm(s.admin); return s; };
 const parseCfg = t => JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
 let S = init(), edit = true, pid = 'logo-design', kid = 'premium', prev = {}, tm, inputs = {};
 const view = $('view'), t = el('div', 'toast'); document.body.append(t);
 const toast = m => { t.textContent = m; t.classList.add('show'); clearTimeout(tm); tm = setTimeout(() => t.classList.remove('show'), 2200); };
-const uid = p => p + '-' + Math.random().toString(36).slice(2, 6);
 const get = path => path.split('.').reduce((o, k) => o?.[k], S);
 const put = (path, v) => { const k = path.split('.'), last = k.pop(); let o = S; for (const x of k) o = o[x]; o[last] = v; };
 const fill = (sel, items, cur) => { sel.replaceChildren(); items.forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = v === cur; sel.append(o); }); };
@@ -390,7 +495,7 @@ function draw() {
   $('open').href = `index.html?site=demo&product=${pid}&package=${kid}`;
 }
 function syncInputs() {
-  for (const [p, i] of Object.entries(inputs)) { const v = get(p); if (v === undefined) continue; if (i.type === 'checkbox') i.checked = v; else if (document.activeElement !== i) i.value = v; }
+  for (const [p, i] of Object.entries(inputs)) { const v = get(p); if (v === undefined) continue; if (i.type === 'checkbox') i.checked = v; else if (i.type === 'color') i.value = v || i.dataset.def || '#000000'; else if (document.activeElement !== i) i.value = v; }
 }
 
 // ---- pembuat kolom otomatis ----
@@ -400,7 +505,7 @@ function sw(parent, label, p) { const w = el('label', 'swt'), i = el('input'); i
 function cf(parent, label, p) { const w = el('label'), i = el('input'); i.type = 'color'; i.value = get(p); on(p, i, 'input', x => x.value); w.append(i, label); parent.append(w); }
 function fields(obj, path, parent, skip) {
   for (const [k, v] of Object.entries(obj)) {
-    if (skip?.has(k)) continue;
+    if (skip?.has(k) || k === 'banks') continue;
     const p = path + '.' + k;
     if (v && typeof v === 'object') { const d = el('details'); d.append(el('summary', '', k)); fields(v, p, d); parent.append(d); continue; }
     const l = el('label', 'cf'), i = el('input'); l.append(el('span', '', k), i);
@@ -422,7 +527,112 @@ function build() {
   fields(S.admin, 'admin', $('contact'), new Set(['ui']));
   fields(S.catalog.products, 'catalog.products', $('cat'));
   $('json').value = JSON.stringify(S, null, 2);
+  bkBuild();
 }
+
+// ================= Tab Bank: daftar bank (urut, sembunyi, hapus/tambah, logo, warna, bentuk) =================
+const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape'], bkOpen = new Set();
+const accIdx = () => S.admin.payments.findIndex(p => p.type === 'account');
+const tplBanks = () => init().admin.payments.find(p => p.type === 'account')?.banks || [];
+
+// Gambar diperkecil (maks 160px) lalu disimpan sebagai data URL di admin.js. SVG dipakai apa adanya.
+const bkFile = f => new Promise((ok, no) => {
+  if (!/^image\//.test(f.type)) return no(new Error('File harus berupa gambar.'));
+  if (f.size > 1.5e6) return no(new Error('Ukuran gambar maksimal 1,5 MB.'));
+  const r = new FileReader();
+  r.onerror = () => no(new Error('File tidak bisa dibaca.'));
+  r.onload = () => {
+    if (f.type === 'image/svg+xml') return ok(r.result);
+    const im = new Image();
+    im.onerror = () => no(new Error('Gambar tidak bisa dibaca.'));
+    im.onload = () => { const k = Math.min(1, 160 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL('image/webp', .9)); };
+    im.src = r.result;
+  };
+  r.readAsDataURL(f);
+});
+
+// Urutkan dengan drag & drop (mouse dan sentuh). Pointer ditangkap di list agar tidak lepas saat elemen dipindah.
+function bkSort(list, done) {
+  list.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.grip'), item = h && h.closest('.bk'); if (!item || e.button > 0) return;
+    e.preventDefault(); list.setPointerCapture(e.pointerId); item.classList.add('drag');
+    const pane = list.closest('.pane'), before = [...list.children].map(x => x.dataset.id).join();
+    const move = ev => {
+      const r = pane.getBoundingClientRect(); if (ev.clientY < r.top + 40) pane.scrollTop -= 12; else if (ev.clientY > r.bottom - 40) pane.scrollTop += 12;
+      const next = [...list.children].filter(x => x !== item).find(x => { const b = x.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+      if (next) { if (item.nextElementSibling !== next) list.insertBefore(item, next); } else if (list.lastElementChild !== item) list.append(item);
+    };
+    const end = () => { list.removeEventListener('pointermove', move); list.removeEventListener('pointerup', end); list.removeEventListener('pointercancel', end);
+      item.classList.remove('drag'); const ids = [...list.children].map(x => x.dataset.id); if (ids.join() !== before) done(ids); };
+    list.addEventListener('pointermove', move); list.addEventListener('pointerup', end); list.addEventListener('pointercancel', end);
+  });
+}
+
+function bkCard(b, p, j, m) {
+  const card = el('div', 'bk' + (bkOpen.has(b.id) ? ' open' : '')), h = el('div', 'bkh'), body = el('div', 'bkb'); card.dataset.id = b.id;
+  const lg = el('span', 'bkl'), paint = () => lg.replaceChildren(bankLogo(b)); paint();
+  const live = (path, i, ev, fn) => { on(path, i, ev, fn); const f = i['on' + ev]; i['on' + ev] = () => { f(); paint(); }; };
+  const btn = (cls, ic, title, fn) => { const x = el('button', cls); x.type = 'button'; x.title = title; x.setAttribute('aria-label', title); if (ic) x.append(icon(ic)); x.onclick = fn; return x; };
+
+  const gp = btn('grip', 'grip', 'Seret untuk memindah posisi', () => {});
+  gp.onkeydown = e => { if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return; e.preventDefault();
+    const to = j + (e.key === 'ArrowUp' ? -1 : 1); if (to < 0 || to >= m.banks.length) return;
+    m.banks.splice(to, 0, m.banks.splice(j, 1)[0]); bkBuild(); draw(); $('banks').querySelector(`[data-id="${b.id}"] .grip`)?.focus(); };
+  const nm = el('input', 'bkn'); nm.type = 'text'; nm.value = b.name || ''; nm.placeholder = 'Nama bank'; nm.setAttribute('aria-label', 'Nama bank'); live(p + '.name', nm, 'input', x => x.value);
+  const eye = btn('ib eye', null, '', () => { if (b.hidden) delete b.hidden; else b.hidden = true; syncEye(); draw(); });
+  const syncEye = () => { eye.replaceChildren(icon(b.hidden ? 'eyeoff' : 'eye')); const t = b.hidden ? 'Tampilkan di checkout' : 'Sembunyikan dari checkout'; eye.title = t; eye.setAttribute('aria-label', t); card.classList.toggle('off', !!b.hidden); };
+  syncEye();
+  const del = btn('ib x', 'trash', 'Hapus bank', () => { if (!confirm('Hapus bank "' + (b.name || 'tanpa nama') + '"?')) return; m.banks.splice(j, 1); bkOpen.delete(b.id); bkBuild(); draw(); toast('Bank dihapus.'); });
+  const tg = btn('ib tgl', 'chev', 'Atur detail', () => { card.classList.toggle('open'); card.classList.contains('open') ? bkOpen.add(b.id) : bkOpen.delete(b.id); });
+  h.append(gp, lg, nm, eye, del, tg);
+
+  const fld = (label, path, ph, max) => { const w = el('label', 'tf'), i = el('input'); i.type = 'text'; i.value = get(path) ?? ''; i.placeholder = ph || ''; if (max) i.maxLength = max; live(path, i, 'input', x => x.value); w.append(label, i); body.append(w); };
+  fld('Nomor rekening', p + '.number', 'Nomor rekening'); fld('Atas nama', p + '.holder', 'Nama pemilik rekening'); fld('Singkatan di badge (maks 3 huruf)', p + '.short', 'BCA', 3);
+
+  // Logo
+  body.append(el('h3', '', 'Logo'));
+  const ur = el('div', 'ur'), fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.hidden = true;
+  const ub = btn('btn sm', 'upload', 'Unggah logo', () => fi.click()); ub.append(' Unggah logo');
+  fi.onchange = async () => { const f = fi.files[0]; if (!f) return; try { b.logo = await bkFile(f); b.color = ''; bkOpen.add(b.id); bkBuild(); draw(); toast('Logo dipasang. Warna shape dikosongkan agar logo tampil di latar putih.'); } catch (e) { toast(e.message); } fi.value = ''; };
+  ur.append(ub, fi);
+  if (b.logo) ur.append(btn('btn sm', null, 'Hapus logo', () => { delete b.logo; bkBuild(); draw(); })), ur.lastChild.textContent = 'Hapus logo';
+  body.append(ur);
+  if (b.logo?.startsWith('data:')) body.append(el('p', 'bkhint', 'Logo diunggah dan tertanam di admin.js (±' + Math.max(1, Math.round(b.logo.length * .75 / 1024)) + ' KB).'));
+  else fld('Atau path file logo di repo', p + '.logo', 'assets/banks/bca.svg');
+
+  // Warna & bentuk
+  body.append(el('h3', '', 'Tampilan badge'));
+  const col = (label, path, def) => { const w = el('div', 'cr'), i = el('input'); i.type = 'color'; i.dataset.def = def; i.value = get(path) || def; live(path, i, 'input', x => x.value);
+    const r = btn('btn sm', null, 'Kembalikan ke default', () => { put(path, ''); i.value = def; paint(); draw(); }); r.textContent = 'Default'; w.append(el('span', '', label), i, r); body.append(w); };
+  col('Warna shape (latar)', p + '.color', b.logo ? '#ffffff' : '#52525b'); col('Warna teks', p + '.textColor', '#ffffff');
+  const sw2 = el('label', 'tf'), sel = el('select'); [['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || 'rounded') === v; sel.append(o); });
+  live(p + '.shape', sel, 'change', x => x.value); sw2.append('Bentuk', sel); body.append(sw2);
+  sw(body, 'Contoh (tidak tampil di checkout asli)', p + '.sample');
+  const rs = btn('btn sm', null, 'Reset gaya bank ini', () => { const t = tplBanks().find(x => x.id === b.id); for (const k of BK_STYLE) { if (t && t[k] !== undefined) b[k] = t[k]; else delete b[k]; } bkBuild(); draw(); toast('Gaya bank dikembalikan ke template.'); });
+  rs.textContent = 'Reset gaya bank ini'; rs.style.marginTop = '8px'; body.append(rs);
+
+  card.append(h, body); return card;
+}
+
+function bkBuild() {
+  for (const k of Object.keys(inputs)) if (k.includes('.banks.')) delete inputs[k];
+  const root = $('banks'); root.replaceChildren();
+  const i = accIdx(); if (i < 0) return root.append(el('p', 'bkhint', 'Belum ada metode pembayaran bertipe "account" (Transfer Bank) di tab Kontak.'));
+  const m = S.admin.payments[i], base = `admin.payments.${i}.banks`;
+  root.append(el('p', 'bkhint', 'Seret ikon titik-titik untuk mengurutkan (atau fokus lalu tekan panah atas/bawah). Ikon mata = tampil atau sembunyikan di checkout. Panah di kanan membuka pengaturan logo, warna, dan bentuk.'));
+  const list = el('div', 'bklist'); m.banks.forEach((b, j) => { if (!b.id) b.id = uid('bank'); list.append(bkCard(b, `${base}.${j}`, j, m)); }); root.append(list);
+  bkSort(list, ids => { m.banks = ids.map(id => m.banks.find(b => b.id === id)); bkBuild(); draw(); });
+  if (!m.banks.length) root.append(el('p', 'bkhint', 'Belum ada bank. Klik "Tambah bank".'));
+  const two = el('div', 'two'), add = el('button', 'btn sm'), rs = el('button', 'btn sm');
+  add.type = rs.type = 'button'; add.append(icon('plus'), ' Tambah bank'); rs.textContent = 'Reset bank ke template awal';
+  add.onclick = () => { const b = { id: uid('bank'), name: 'Bank Baru', short: 'BNK', color: '#2563eb', textColor: '#ffffff', number: '', holder: '' }; m.banks.push(b); bkOpen.add(b.id); bkBuild(); draw();
+    const c = $('banks').querySelector(`[data-id="${b.id}"]`); c?.scrollIntoView({ block: 'nearest' }); c?.querySelector('.bkn')?.select(); };
+  rs.onclick = () => { if (!confirm('Kembalikan SEMUA bank ke template awal? Perubahan di tab Bank akan hilang.')) return; m.banks = structuredClone(tplBanks()); bkOpen.clear(); bkBuild(); draw(); toast('Bank dikembalikan ke template awal.'); };
+  two.append(add, rs); root.append(two);
+}
+function bkPreview() { const m = S.admin.payments[accIdx()]; if (m && prev.state) { prev.state.step = 1; prev.state.method = m.id; prev.state.anim = false; draw(); } }
 
 view.addEventListener('focusout', e => {
   const p = e.target.dataset?.path; if (!edit || !p) return;
@@ -433,7 +643,7 @@ view.addEventListener('focusout', e => {
 view.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.path) { e.preventDefault(); e.target.blur(); } });
 
 const pkgs = () => S.catalog.products[pid].packages, redo = () => { build(); draw(); }, keep = () => ({ customer: prev.customer, state: prev.state });
-$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.pane section').forEach(s => s.hidden = s.id !== 'tab-' + b.dataset.t); };
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.pane section').forEach(s => s.hidden = s.id !== 'tab-' + b.dataset.t); if (b.dataset.t === 'bank') bkPreview(); };
 $('q').oninput = e => { const q = e.target.value.toLowerCase(); document.querySelectorAll('#texts .tf').forEach(w => { w.style.display = (w.firstChild.textContent + w.lastChild.value).toLowerCase().includes(q) ? '' : 'none'; }); };
 $('edit').onchange = e => { edit = e.target.checked; draw(); };
 $('pid').onchange = e => { pid = e.target.value; kid = ''; prev = keep(); draw(); };
@@ -449,10 +659,10 @@ $('dadm').onclick = () => save('admin.js', S.admin);
 $('dcat').onclick = () => save('products.json', S.catalog);
 $('imp').onchange = async e => { const f = e.target.files[0]; if (!f) return;
   try { const j = parseCfg(await f.text());
-    if (j.products) S.catalog = j; else if (j.brand) { j.ui = merge(DEFAULT_UI, j.ui || {}); S.admin = j; } else throw 0;
+    if (j.products) S.catalog = j; else if (j.brand) { j.ui = merge(DEFAULT_UI, j.ui || {}); S.admin = norm(j); } else throw 0;
     prev = {}; redo(); toast(f.name + ' dimuat.'); } catch { toast('File JSON tidak dikenali.'); } e.target.value = ''; };
 $('jload').onclick = () => { $('json').value = JSON.stringify(S, null, 2); };
-$('japply').onclick = () => { try { const n = JSON.parse($('json').value); if (!n.admin || !n.catalog || !n.site) throw 0; n.admin.ui = merge(DEFAULT_UI, n.admin.ui || {}); S = n; prev = {}; redo(); toast('JSON diterapkan.'); } catch { toast('JSON tidak valid.'); } };
+$('japply').onclick = () => { try { const n = JSON.parse($('json').value); if (!n.admin || !n.catalog || !n.site) throw 0; n.admin.ui = merge(DEFAULT_UI, n.admin.ui || {}); norm(n.admin); S = n; prev = {}; redo(); toast('JSON diterapkan.'); } catch { toast('JSON tidak valid.'); } };
 $('theme').onclick = () => { toggleTheme(); draw(); };
 $('dev').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('frame').style.width = b.dataset.w; document.querySelectorAll('#dev button').forEach(x => x.classList.toggle('on', x === b)); };
 $('stp').onclick = e => { const b = e.target.closest('button'); if (!b || !prev.state) return; prev.state.step = +b.dataset.s; prev.state.anim = true; draw(); };

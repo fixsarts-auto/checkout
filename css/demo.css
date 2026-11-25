@@ -28,3 +28,25 @@ textarea{height:260px;font:.72rem/1.45 ui-monospace,monospace!important;resize:v
 .canvas{flex:1;overflow:auto;padding:28px;background:radial-gradient(color-mix(in srgb,var(--ink) 14%,transparent) 1px,transparent 1px) 0 0/18px 18px,var(--bg1)}
 #frame{margin:0 auto;max-width:100%;width:100%;transition:width .4s cubic-bezier(.2,.8,.2,1);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35);border:1px solid var(--bd)}
 @media(max-width:980px){body{overflow:auto}.app{grid-template-columns:1fr;height:auto}.sidepanel{max-height:70vh}.canvas{padding:12px;min-height:80vh}}
+
+/* Tab Bank */
+.bkhint{font-size:.76rem;color:var(--mut);margin:0 0 10px;line-height:1.5}
+.bklist{display:grid;gap:8px;margin-bottom:12px}
+.bk{border:1px solid var(--bd);border-radius:12px;background:var(--in);transition:box-shadow .2s,border-color .2s}
+.bk.off .bkl,.bk.off .bkn{opacity:.4}
+.bk.drag{box-shadow:0 10px 28px rgba(0,0,0,.4);border-color:var(--ink);position:relative;z-index:2}
+.bkh{display:flex;align-items:center;gap:4px;padding:8px}
+.bkl{flex:none;display:grid;margin:0 4px}
+.pane .bkh input.bkn{flex:1;min-width:0;background:transparent;border-color:transparent;font-weight:600;padding:6px 8px}
+.pane .bkh input.bkn:focus{border-color:var(--ink);background:var(--in)}
+.grip,.ib{all:unset;box-sizing:border-box;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;cursor:pointer;color:var(--mut);flex:none;transition:background .2s,color .2s}
+.grip{cursor:grab;touch-action:none}.grip:active{cursor:grabbing}
+.grip:hover,.ib:hover{background:var(--bd);color:var(--ink)}.ib.x:hover{color:#ef5a5f}
+.grip:focus-visible,.ib:focus-visible{outline:2px solid var(--ink)}
+.grip .ico,.ib .ico{width:18px;height:18px}
+.ib.tgl .ico{transition:transform .25s}.bk.open .ib.tgl .ico{transform:rotate(90deg)}
+.bkb{display:none;padding:0 12px 12px;border-top:1px solid var(--bd)}.bk.open .bkb{display:block}
+.bkb h3{margin-top:14px}
+.ur{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 8px}.ur .btn{display:inline-flex;align-items:center;gap:6px}.ur .ico{width:16px;height:16px}
+.cr{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.78rem;color:var(--mut);font-weight:600}.cr>span{flex:1}.pane .cr input[type=color]{width:52px;flex:none}
+.two .btn .ico{width:16px;height:16px}.two .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}

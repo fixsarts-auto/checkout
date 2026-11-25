@@ -27,23 +27,50 @@ export function validateCatalog(c) {
   return c;
 }
 
-// Katalog hanya boleh berasal dari: (1) nama terdaftar di config/sites.json ("sites"), atau
-// (2) alamat website dengan origin yang ada di "allowedOrigins" (katalog selalu di <alamat>/data/products.json).
+// Katalog hanya boleh berasal dari:
+// (1) nama terdaftar di config/sites.json ("sites"). "catalog" boleh path relatif (di repo checkout) atau URL penuh
+//     yang origin-nya ada di "allowedOrigins", atau
+// (2) alamat halaman website dengan origin yang ada di "allowedOrigins". Folder di alamat itu boleh BERSARANG
+//     (mis. /home/Section/Jadwal%20Kerja/). Katalog dicari dari folder paling dalam naik ke folder induk,
+//     dan yang pertama ketemu dipakai:  <folder>/data/products.json, lalu <folder>/products.json.
+const SEG = /^[\w.\- ()]{1,80}$/, FILE = /\.[a-z][a-z0-9]{0,4}$/i, MAX_DEPTH = 6;
+export function sitePath(u) {
+  const bad = () => { throw new Error('Alamat website tidak valid.'); };
+  const segs = u.pathname.split('/').filter(Boolean).map(x => { let d; try { d = decodeURIComponent(x); } catch { bad(); } return d; });
+  if (segs.length && FILE.test(segs[segs.length - 1])) segs.pop(); // alamat halaman (…/index.html) -> foldernya
+  if (segs.length > MAX_DEPTH || segs.some(d => d === '.' || d === '..' || !SEG.test(d))) bad();
+  return segs;
+}
+export const catalogCandidates = (origin, segs) => {
+  const out = [];
+  for (let k = segs.length; k >= 0; k--) {
+    const dir = origin + segs.slice(0, k).map(x => '/' + encodeURIComponent(x)).join('');
+    out.push(dir + '/data/products.json', dir + '/products.json');
+  }
+  return out;
+};
+const httpsOrLocal = url => url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname);
+
 export async function loadCatalog(siteParam) {
-  const cfg = await fetchJson('config/sites.json');
-  let id, name, url;
+  const cfg = await fetchJson('config/sites.json'), allowed = Array.isArray(cfg.allowedOrigins) ? cfg.allowedOrigins : [];
+  let id, name, catalog;
   if (ID.test(siteParam || '')) {
     if (!own(cfg.sites || {}, siteParam)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
-    const s = cfg.sites[siteParam]; id = siteParam; name = String(s.name || siteParam); url = new URL(s.catalog, location.href);
+    const s = cfg.sites[siteParam]; id = siteParam; name = String(s.name || siteParam);
+    const url = new URL(s.catalog, location.href);
+    if (url.origin !== location.origin && !allowed.includes(url.origin)) throw new Error('Alamat katalog tidak diizinkan.');
+    if (!httpsOrLocal(url)) throw new Error('Alamat katalog harus HTTPS.');
+    catalog = validateCatalog(await fetchJson(url.href));
   } else {
     let u; try { u = new URL(siteParam); } catch { throw new Error('Alamat website tidak valid.'); }
-    if (!Array.isArray(cfg.allowedOrigins) || !cfg.allowedOrigins.includes(u.origin)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
-    if (!/^\/([A-Za-z0-9._-]+\/?)?$/.test(u.pathname)) throw new Error('Alamat website tidak valid.');
-    const base = u.origin + u.pathname.replace(/\/$/, '');
-    id = name = base.replace(/^https?:\/\//, ''); url = new URL(base + '/data/products.json');
+    if (!allowed.includes(u.origin)) throw new Error('Website belum terdaftar di Fixs.Arts Checkout.');
+    if (!httpsOrLocal(u)) throw new Error('Alamat katalog harus HTTPS.');
+    const segs = sitePath(u), cands = catalogCandidates(u.origin, segs);
+    id = name = u.host + segs.map(x => '/' + x).join('');
+    const res = await Promise.allSettled(cands.map(c => fetchJson(c))), i = res.findIndex(r => r.status === 'fulfilled');
+    if (i < 0) throw new Error('Katalog produk tidak ditemukan. Taruh data/products.json (atau products.json) di folder halaman penjualan atau folder induknya.');
+    try { catalog = validateCatalog(res[i].value); } catch (e) { throw new Error(e.message + ' (file: ' + cands[i].replace(u.origin, '') + ')'); }
   }
-  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname)) throw new Error('Alamat katalog harus HTTPS.');
-  const catalog = validateCatalog(await fetchJson(url.href));
   if (typeof catalog.siteName === 'string' && catalog.siteName.trim()) name = catalog.siteName.trim().slice(0, 60);
   return { site: { id, name }, catalog };
 }
