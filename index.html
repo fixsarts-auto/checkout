@@ -4,45 +4,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file: https://fixsarts-auto.github.io; style-src 'self' file: https://fonts.googleapis.com https://fixsarts-auto.github.io; font-src https://fonts.gstatic.com; img-src 'self' file: data: https:; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
-
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file: https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' file: data:; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
 <title>Checkout · Fixs.Arts</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap">
-
 <link rel="stylesheet" href="css/style.css">
-
-<!-- Fixs.Arts Header & Footer CSS -->
-<link rel="stylesheet" href="https://fixsarts-auto.github.io/components/headerfooter/headerfooter.css">
+    
+  <!-- 1) di <head> -->
+  <link rel="stylesheet" href="https://fixsarts-auto.github.io/components/headerfooter/headerfooter.css">
+  
 
 </head>
 <body>
+    <!-- Header -->
+  <header data-site-header></header>
+  <script src="https://fixsarts-auto.github.io/components/headerfooter/headerfooter-config.js"></script>
+  <script src="https://fixsarts-auto.github.io/components/headerfooter/headerfooter.js"></script>
 
-<!-- Header -->
-<header data-site-header></header>
-
+  
 <div class="bg"></div>
-
 <div id="app" class="wrap"></div>
-
-<noscript>
-  <p class="wrap">Checkout membutuhkan JavaScript.</p>
-</noscript>
-
+<noscript><p class="wrap">Checkout membutuhkan JavaScript.</p></noscript>
 <script src="config/admin.js"></script>
 <script src="js/app.bundle.js"></script>
 
-<!-- Footer -->
-<footer data-site-footer></footer>
-
-<!-- Fixs.Arts Header & Footer Engine -->
-<script src="https://fixsarts-auto.github.io/components/headerfooter/headerfooter-config.js"></script>
-<script src="https://fixsarts-auto.github.io/components/headerfooter/headerfooter.js"></script>
-
+  <!-- Footer -->
+  <footer data-site-footer></footer>
+  
 </body>
 </html>
 ```
+
+
+
+
