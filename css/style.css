@@ -186,3 +186,47 @@ h1,.sbody h2{font-weight:600}
 .zoom.out{opacity:0;transition:opacity .18s}
 .zclose{position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font:400 28px/1 system-ui;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .zclose:hover{background:rgba(255,255,255,.28)}
+
+/* ===== Halaman checkout dengan header + footer komponen ===== */
+body.hf{display:flex;flex-direction:column}
+body.hf>#app{flex:1;display:flex;flex-direction:column;min-width:0}
+body.hf .fa.page{flex:1;min-height:0;display:flex;flex-direction:column}
+body.hf .fa.page .stage{flex:1;min-height:0}
+/* checkout bukan halaman "Home": jangan sorot menu Home di header */
+.hf-nav .hf-nav-menu a.active:not(:hover),.hf-nav .hf-ham-menu a.active:not(:hover){color:var(--hf-muted,#9B9BA5)}
+.zoom{z-index:200}.toast{z-index:150}
+
+/* ===== Keranjang (beberapa item dalam satu pesanan) ===== */
+.cart{margin:4px 0 22px}
+.cart-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}.cart-h small{color:var(--mut);font-size:.78rem}
+.cart-l{display:grid;gap:8px}
+.ci{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:12px 14px;border:1px solid var(--bd);border-radius:14px;background:var(--fld)}
+.ci-i{display:grid;gap:2px;min-width:0}.ci-i strong{font-size:.92rem;font-weight:600;line-height:1.35}.ci-i small{color:var(--mut);font-size:.8rem}
+.ci-p s{opacity:.6;margin-right:4px}
+.ci-c{display:flex;align-items:center;gap:10px;grid-column:1;justify-content:space-between}
+.ci>.icon-btn{grid-column:2;grid-row:1}.ci>.icon-btn.off{opacity:.3;pointer-events:none}
+.ci-t{font-variant-numeric:tabular-nums;margin-left:auto}
+.qb{all:unset;box-sizing:border-box;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;border:1px solid var(--bd);cursor:pointer;font-size:1.1rem;line-height:1;transition:border-color .2s,background .2s,transform .15s}
+.qb:hover:not(:disabled){border-color:var(--mut)}.qb:active:not(:disabled){transform:scale(.92)}.qb:disabled{opacity:.35;cursor:not-allowed}.qb:focus-visible{outline:2px solid var(--ac)}
+.qn{min-width:22px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.addi{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:11px;border:1.5px dashed var(--bd);border-radius:14px;color:var(--mut);font-weight:600;font-size:.88rem;cursor:pointer;transition:border-color .2s,color .2s}
+.addi:hover{border-color:var(--mut);color:var(--ink)}.addi:focus-visible{outline:2px solid var(--ac)}.addi .ico{width:16px;height:16px}
+.picker{display:none;margin-top:8px;border:1px solid var(--bd);border-radius:14px;background:var(--fld);max-height:340px;overflow:auto;overscroll-behavior:contain}
+.picker.open{display:block;animation:rise .3s cubic-bezier(.2,.8,.2,1)}
+.pg{position:sticky;top:0;padding:9px 14px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);background:var(--panel,var(--bg1));border-bottom:1px solid var(--bd)}
+.pr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd)}.pr:last-child{border-bottom:0}
+.pt{display:grid;gap:1px;font-size:.88rem;min-width:0}.pt .ci-p{color:var(--mut);font-size:.8rem}
+.pa{all:unset;box-sizing:border-box;padding:7px 14px;border-radius:99px;border:1px solid var(--bd);font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s}
+.pa:hover:not(:disabled){border-color:var(--ac)}.pa:disabled{opacity:.4;cursor:not-allowed}.pa:focus-visible{outline:2px solid var(--ac)}
+
+/* Tombol tutup daftar layanan */
+.addi .ico{transition:transform .25s}
+.addi.on{border-style:solid;border-color:var(--mut);color:var(--ink)}.addi.on .ico{transform:rotate(45deg)}
+.pdone{all:unset;box-sizing:border-box;display:block;width:100%;position:sticky;bottom:0;padding:13px;text-align:center;font-weight:700;font-size:.88rem;cursor:pointer;background:var(--panel,var(--bg1));border-top:1px solid var(--bd);transition:color .2s}
+.pdone:hover{color:var(--ac)}.pdone:focus-visible{outline:2px solid var(--ac);outline-offset:-2px}
+
+/* Logo bank: memenuhi badge, latar transparan (latar bantuan opsional) */
+.blogo.logo{background:transparent;border:0}
+.blogo.logo img{padding:0;object-fit:contain}
+.blogo.logo.raw{border-radius:0;overflow:visible}
+.blogo.logo.bg{background:#fff;border:1px solid var(--bd)}.blogo.logo.bg img{padding:4px}

@@ -19,6 +19,7 @@ export function validateCatalog(c) {
     if (!ID.test(pid) || typeof p.name !== 'string' || !p.packages) bad('produk ' + pid);
     for (const [kid, k] of Object.entries(p.packages)) {
       if (!ID.test(kid) || typeof k.name !== 'string' || !Number.isInteger(k.price) || k.price < 0) bad(`paket ${pid}/${kid}`);
+      if (k.maxQty !== undefined && (!Number.isInteger(k.maxQty) || k.maxQty < 1 || k.maxQty > 99)) bad(`maxQty ${pid}/${kid}`);
       const d = k.discount;
       if (d && (!['percent', 'amount'].includes(d.type) || !Number.isInteger(d.value) || d.value < 0 ||
         (d.type === 'percent' && d.value > 100) || (d.type === 'amount' && d.value > k.price))) bad(`diskon ${pid}/${kid}`);
@@ -84,23 +85,55 @@ const newId = () => {
   const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
   return `FA-${ymd}-${[...r].map(x => a[x % a.length]).join('')}`;
 };
-export const orderKey = (site, pid, kid) => `fa-order:${site.id}:${pid}:${kid}`;
+export const orderKey = (site, sig) => `fa-order:${site.id}:${sig}`;
 export const stableId = key => { try { return sessionStorage.getItem(key) || (sessionStorage.setItem(key, newId()), sessionStorage.getItem(key)); } catch { return newId(); } };
 
-// Harga SELALU dihitung dari katalog, tidak ada angka dari URL.
-export function buildOrder(site, catalog, pid, kid, prev = {}, admin = null) {
-  if (!ID.test(pid || '') || !ID.test(kid || '')) throw new Error('ID produk atau paket tidak valid.');
-  const p = own(catalog.products, pid) && catalog.products[pid];
-  const k = p && own(p.packages, kid) && p.packages[kid];
-  if (!k) throw new Error('Produk atau paket tidak ditemukan di katalog website.');
-  const base = `catalog.products.${pid}`, id = prev.id || stableId(orderKey(site, pid, kid)), r = admin?.uniqueCode || {};
-  const code = admin && admin.ui?.features?.uniqueCode !== false ? uniqueCode(id, +r.min || 1, +r.max || 999) : 0;
-  return {
-    id, site,
-    product: { id: pid, name: p.name, path: base + '.name' },
-    pkg: { id: kid, name: k.name, path: `${base}.packages.${kid}.name`, pp: `${base}.packages.${kid}`, discount: k.discount },
-    pricing: calc(k, code),
-    state: prev.state || { step: 0, method: null },
-    customer: prev.customer || { name: '', wa: '', email: '', platform: 'instagram', handle: '' }
-  };
+// ---- Keranjang (beberapa item dalam satu pesanan) ----
+export const MAX_LINES = 20, MAX_QTY = 99;
+export const maxQtyOf = k => Math.min(MAX_QTY, Math.max(1, Math.round(+k.maxQty) || 1));   // bawaan 1 = satu unit per paket
+// "pid:kid:qty,pid:kid:qty" -> [{pid,kid,qty}] (ID divalidasi, duplikat digabung, jumlah dibatasi)
+export function parseItems(str) {
+  const out = [];
+  for (const part of String(str || '').split(',')) {
+    const [pid, kid, q] = part.trim().split(':');
+    if (!ID.test(pid || '') || !ID.test(kid || '')) continue;
+    const qty = Math.min(MAX_QTY, Math.max(1, parseInt(q, 10) || 1)), hit = out.find(x => x.pid === pid && x.kid === kid);
+    if (hit) hit.qty = Math.min(MAX_QTY, hit.qty + qty); else if (out.length < MAX_LINES) out.push({ pid, kid, qty });
+  }
+  return out;
+}
+// Item awal dari URL: ?items=a:b:2,c:d  atau bentuk lama ?product=a&package=b
+export function entryOf(q) {
+  let items = parseItems(q.get('items'));
+  if (!items.length && q.get('product') && q.get('package')) items = parseItems(`${q.get('product')}:${q.get('package')}:1`);
+  return { items, sig: items.map(i => `${i.pid}.${i.kid}.${i.qty}`).join(',') };
+}
+// Harga SELALU dihitung dari katalog, tidak ada angka dari URL. Item yang tidak ada di katalog dibuang.
+export function priceOrder(catalog, items, admin, id) {
+  const lines = [], kept = [];
+  for (const it of items || []) {
+    const p = ID.test(it.pid || '') && own(catalog.products, it.pid) && catalog.products[it.pid];
+    const k = p && ID.test(it.kid || '') && own(p.packages, it.kid) && p.packages[it.kid];
+    if (!k) continue;
+    const mq = maxQtyOf(k), qty = Math.min(mq, Math.max(1, Math.round(+it.qty) || 1)), base = `catalog.products.${it.pid}`, c = calc(k, 0, qty);
+    lines.push({ pid: it.pid, kid: it.kid, qty,
+      product: { id: it.pid, name: p.name, path: base + '.name' },
+      pkg: { id: it.kid, name: k.name, path: `${base}.packages.${it.kid}.name`, pp: `${base}.packages.${it.kid}`, discount: k.discount, maxQty: mq },
+      unit: c.unit, discUnit: c.discUnit, base: c.base, disc: c.disc, total: c.base - c.disc });
+    kept.push({ pid: it.pid, kid: it.kid, qty });
+  }
+  const sum = f => lines.reduce((s, l) => s + l[f], 0), r = admin?.uniqueCode || {}, base = sum('base'), disc = sum('disc');
+  const code = lines.length && admin && admin.ui?.features?.uniqueCode !== false ? uniqueCode(id, +r.min || 1, +r.max || 999) : 0;
+  return { items: kept, lines, pricing: { base, disc, code, total: base - disc + code, count: sum('qty') } };
+}
+// Hitung ulang harga setelah isi keranjang berubah.
+export function refresh(o, catalog, admin) {
+  const r = priceOrder(catalog, o.state.items, admin, o.id);
+  if (!r.lines.length) throw new Error('Produk atau paket tidak ditemukan di katalog website.');
+  Object.assign(o, r); o.state.items = r.items; return o;
+}
+export function buildOrder(site, catalog, entry, prev = {}, admin = null) {
+  const id = prev.id || stableId(orderKey(site, entry.sig)), state = prev.state || { step: 0, method: null };
+  if (state.sig !== entry.sig) { state.sig = entry.sig; state.items = entry.items.map(i => ({ ...i })); }
+  return refresh({ id, site, state, customer: prev.customer || { name: '', wa: '', email: '', platform: 'instagram', handle: '' } }, catalog, admin);
 }

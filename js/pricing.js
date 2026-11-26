@@ -1,8 +1,10 @@
 export const rupiah = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
-export function calc(pkg, code = 0) {
-  const d = pkg.discount, base = pkg.price;
-  const disc = !d ? 0 : d.type === 'percent' ? Math.round(base * d.value / 100) : Math.min(d.value, base);
-  return { base, disc, code, total: base - disc + code };
+// Harga satu baris item. Diskon dihitung per unit, lalu dikali jumlah (qty).
+export function calc(pkg, code = 0, qty = 1) {
+  const d = pkg.discount, unit = pkg.price;
+  const discUnit = !d ? 0 : d.type === 'percent' ? Math.round(unit * d.value / 100) : Math.min(d.value, unit);
+  const base = unit * qty, disc = discUnit * qty;
+  return { unit, discUnit, base, disc, code, total: base - disc + code };
 }
 // Kode unik (maks 3 digit) yang stabil untuk satu nomor pesanan (hash FNV-1a), agar transfer mudah dicocokkan.
 export function uniqueCode(id, min = 1, max = 999) {

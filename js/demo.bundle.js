@@ -54,10 +54,12 @@ function icon(n) {
 }
 
 const rupiah = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
-function calc(pkg, code = 0) {
-  const d = pkg.discount, base = pkg.price;
-  const disc = !d ? 0 : d.type === 'percent' ? Math.round(base * d.value / 100) : Math.min(d.value, base);
-  return { base, disc, code, total: base - disc + code };
+// Harga satu baris item. Diskon dihitung per unit, lalu dikali jumlah (qty).
+function calc(pkg, code = 0, qty = 1) {
+  const d = pkg.discount, unit = pkg.price;
+  const discUnit = !d ? 0 : d.type === 'percent' ? Math.round(unit * d.value / 100) : Math.min(d.value, unit);
+  const base = unit * qty, disc = discUnit * qty;
+  return { unit, discUnit, base, disc, code, total: base - disc + code };
 }
 // Kode unik (maks 3 digit) yang stabil untuk satu nomor pesanan (hash FNV-1a), agar transfer mudah dicocokkan.
 function uniqueCode(id, min = 1, max = 999) {
@@ -105,7 +107,7 @@ const DEFAULT_UI = {
   radius: 28,
   font: "'Plus Jakarta Sans',system-ui,sans-serif",
   features: { stepper: true, themeToggle: true, contact: true, socialMedia: true, orderNumber: true, discount: true, copyAmount: true,
-    channelWhatsapp: true, channelInstagram: true, channelTiktok: true, channelEmail: true, collapsibleSummary: true, animations: true, uniqueCode: true, timer: true },
+    channelWhatsapp: true, channelInstagram: true, channelTiktok: true, channelEmail: true, collapsibleSummary: true, animations: true, uniqueCode: true, timer: true, cart: true },
   texts: {
     step1: 'Data', step2: 'Pembayaran', step3: 'Konfirmasi',
     t1: 'Data Pembeli', s1: 'Isi data kamu agar admin bisa menghubungi dan memproses pesanan.',
@@ -118,7 +120,8 @@ const DEFAULT_UI = {
     sumTitle: 'Ringkasan Pesanan', sumSub: 'Pesanan diverifikasi manual oleh admin.', totalLabel: 'Total pembayaran',
     subtotal: 'Subtotal', discount: 'Diskon', orderNo: 'Nomor pesanan', buyer: 'Pembeli', method: 'Metode',
     footer: 'Dengan melanjutkan, kamu menyetujui bahwa pembayaran diverifikasi manual oleh admin.',
-    bankHint: 'Pilih bank tujuan transfer.', errMethod: 'Pilih metode pembayaran dulu.', errBank: 'Pilih bank tujuan dulu.', payTo: 'Tujuan pembayaran', accBank: 'Bank', accNo: 'No. rekening', accHolder: 'Atas nama', save: 'Simpan gambar', confirmVia: 'Kirim bukti pembayaran via', tDone: 'Pesanan Terkirim', sDone: 'Terima kasih! Admin akan memverifikasi pembayaranmu secepatnya.',
+    bankHint: 'Pilih bank tujuan transfer.', errMethod: 'Pilih metode pembayaran dulu.', errBank: 'Pilih bank tujuan dulu.', payTo: 'Tujuan pembayaran', accBank: 'Bank', accNo: 'No. rekening', accHolder: 'Atas nama', save: 'Simpan gambar', confirmVia: 'Kirim bukti pembayaran via', cartTitle: 'Pesananmu', addMore: 'Tambah layanan lain', closeMore: 'Tutup daftar layanan', doneMore: 'Selesai',
+    tDone: 'Pesanan Terkirim', sDone: 'Terima kasih! Admin akan memverifikasi pembayaranmu secepatnya.',
     tl1: 'Pesanan dibuat', tl2: 'Bukti pembayaran dikirim', tl3: 'Verifikasi admin', tl3d: 'Maksimal 1×24 jam. Mohon tunggu kabar dari admin.', tl4: 'Pesanan diproses', tl4d: 'Kamu akan dihubungi lewat kontak yang kamu isi.',
     backSite: 'Kembali ke website', resend: 'Kirim ulang bukti',
     uniqueCode: 'Kode unik', uniqueNote: 'Transfer tepat sampai 3 digit terakhir agar pembayaranmu mudah diverifikasi.',
@@ -153,6 +156,7 @@ function validateCatalog(c) {
     if (!ID.test(pid) || typeof p.name !== 'string' || !p.packages) bad('produk ' + pid);
     for (const [kid, k] of Object.entries(p.packages)) {
       if (!ID.test(kid) || typeof k.name !== 'string' || !Number.isInteger(k.price) || k.price < 0) bad(`paket ${pid}/${kid}`);
+      if (k.maxQty !== undefined && (!Number.isInteger(k.maxQty) || k.maxQty < 1 || k.maxQty > 99)) bad(`maxQty ${pid}/${kid}`);
       const d = k.discount;
       if (d && (!['percent', 'amount'].includes(d.type) || !Number.isInteger(d.value) || d.value < 0 ||
         (d.type === 'percent' && d.value > 100) || (d.type === 'amount' && d.value > k.price))) bad(`diskon ${pid}/${kid}`);
@@ -218,25 +222,57 @@ const newId = () => {
   const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
   return `FA-${ymd}-${[...r].map(x => a[x % a.length]).join('')}`;
 };
-const orderKey = (site, pid, kid) => `fa-order:${site.id}:${pid}:${kid}`;
+const orderKey = (site, sig) => `fa-order:${site.id}:${sig}`;
 const stableId = key => { try { return sessionStorage.getItem(key) || (sessionStorage.setItem(key, newId()), sessionStorage.getItem(key)); } catch { return newId(); } };
 
-// Harga SELALU dihitung dari katalog, tidak ada angka dari URL.
-function buildOrder(site, catalog, pid, kid, prev = {}, admin = null) {
-  if (!ID.test(pid || '') || !ID.test(kid || '')) throw new Error('ID produk atau paket tidak valid.');
-  const p = own(catalog.products, pid) && catalog.products[pid];
-  const k = p && own(p.packages, kid) && p.packages[kid];
-  if (!k) throw new Error('Produk atau paket tidak ditemukan di katalog website.');
-  const base = `catalog.products.${pid}`, id = prev.id || stableId(orderKey(site, pid, kid)), r = admin?.uniqueCode || {};
-  const code = admin && admin.ui?.features?.uniqueCode !== false ? uniqueCode(id, +r.min || 1, +r.max || 999) : 0;
-  return {
-    id, site,
-    product: { id: pid, name: p.name, path: base + '.name' },
-    pkg: { id: kid, name: k.name, path: `${base}.packages.${kid}.name`, pp: `${base}.packages.${kid}`, discount: k.discount },
-    pricing: calc(k, code),
-    state: prev.state || { step: 0, method: null },
-    customer: prev.customer || { name: '', wa: '', email: '', platform: 'instagram', handle: '' }
-  };
+// ---- Keranjang (beberapa item dalam satu pesanan) ----
+const MAX_LINES = 20, MAX_QTY = 99;
+const maxQtyOf = k => Math.min(MAX_QTY, Math.max(1, Math.round(+k.maxQty) || 1));   // bawaan 1 = satu unit per paket
+// "pid:kid:qty,pid:kid:qty" -> [{pid,kid,qty}] (ID divalidasi, duplikat digabung, jumlah dibatasi)
+function parseItems(str) {
+  const out = [];
+  for (const part of String(str || '').split(',')) {
+    const [pid, kid, q] = part.trim().split(':');
+    if (!ID.test(pid || '') || !ID.test(kid || '')) continue;
+    const qty = Math.min(MAX_QTY, Math.max(1, parseInt(q, 10) || 1)), hit = out.find(x => x.pid === pid && x.kid === kid);
+    if (hit) hit.qty = Math.min(MAX_QTY, hit.qty + qty); else if (out.length < MAX_LINES) out.push({ pid, kid, qty });
+  }
+  return out;
+}
+// Item awal dari URL: ?items=a:b:2,c:d  atau bentuk lama ?product=a&package=b
+function entryOf(q) {
+  let items = parseItems(q.get('items'));
+  if (!items.length && q.get('product') && q.get('package')) items = parseItems(`${q.get('product')}:${q.get('package')}:1`);
+  return { items, sig: items.map(i => `${i.pid}.${i.kid}.${i.qty}`).join(',') };
+}
+// Harga SELALU dihitung dari katalog, tidak ada angka dari URL. Item yang tidak ada di katalog dibuang.
+function priceOrder(catalog, items, admin, id) {
+  const lines = [], kept = [];
+  for (const it of items || []) {
+    const p = ID.test(it.pid || '') && own(catalog.products, it.pid) && catalog.products[it.pid];
+    const k = p && ID.test(it.kid || '') && own(p.packages, it.kid) && p.packages[it.kid];
+    if (!k) continue;
+    const mq = maxQtyOf(k), qty = Math.min(mq, Math.max(1, Math.round(+it.qty) || 1)), base = `catalog.products.${it.pid}`, c = calc(k, 0, qty);
+    lines.push({ pid: it.pid, kid: it.kid, qty,
+      product: { id: it.pid, name: p.name, path: base + '.name' },
+      pkg: { id: it.kid, name: k.name, path: `${base}.packages.${it.kid}.name`, pp: `${base}.packages.${it.kid}`, discount: k.discount, maxQty: mq },
+      unit: c.unit, discUnit: c.discUnit, base: c.base, disc: c.disc, total: c.base - c.disc });
+    kept.push({ pid: it.pid, kid: it.kid, qty });
+  }
+  const sum = f => lines.reduce((s, l) => s + l[f], 0), r = admin?.uniqueCode || {}, base = sum('base'), disc = sum('disc');
+  const code = lines.length && admin && admin.ui?.features?.uniqueCode !== false ? uniqueCode(id, +r.min || 1, +r.max || 999) : 0;
+  return { items: kept, lines, pricing: { base, disc, code, total: base - disc + code, count: sum('qty') } };
+}
+// Hitung ulang harga setelah isi keranjang berubah.
+function refresh(o, catalog, admin) {
+  const r = priceOrder(catalog, o.state.items, admin, o.id);
+  if (!r.lines.length) throw new Error('Produk atau paket tidak ditemukan di katalog website.');
+  Object.assign(o, r); o.state.items = r.items; return o;
+}
+function buildOrder(site, catalog, entry, prev = {}, admin = null) {
+  const id = prev.id || stableId(orderKey(site, entry.sig)), state = prev.state || { step: 0, method: null };
+  if (state.sig !== entry.sig) { state.sig = entry.sig; state.items = entry.items.map(i => ({ ...i })); }
+  return refresh({ id, site, state, customer: prev.customer || { name: '', wa: '', email: '', platform: 'instagram', handle: '' } }, catalog, admin);
 }
 
 
@@ -247,8 +283,8 @@ function buildMessage(o, a, pay = '') {
   const c = o.customer, p = o.pricing;
   return ['Halo Admin ' + a.brand + ', saya sudah melakukan pembayaran.', '',
     `No. Pesanan: ${o.id}`, `Website: ${o.site.name === o.site.id ? o.site.id : o.site.name + ' (' + o.site.id + ')'}`,
-    `Produk: ${o.product.name} [${o.product.id}]`, `Paket: ${o.pkg.name} [${o.pkg.id}]`,
-    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, p.code > 0 ? `Kode unik: ${rupiah(p.code)}` : null, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
+    'Pesanan:', ...o.lines.map((l, i) => `${i + 1}. ${l.product.name} · ${l.pkg.name}${l.qty > 1 ? ' ×' + l.qty : ''} = ${rupiah(l.base)} [${l.pid}/${l.kid}]`),
+    `Subtotal: ${rupiah(p.base)}`, p.disc > 0 ? `Diskon: -${rupiah(p.disc)}` : null, p.code > 0 ? `Kode unik: ${rupiah(p.code)}` : null, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
     `Nama: ${c.name.trim() || '-'}`,
     c.wa.trim() ? `WhatsApp: ${c.wa.trim()}` : null,
     c.email.trim() ? `Email: ${c.email.trim()}` : null,
@@ -265,6 +301,27 @@ const channels = a => [
 ];
 async function copy(t) { try { await navigator.clipboard.writeText(t); return true; } catch { return false; } }
 const go = u => u.startsWith('mailto:') ? (location.href = u) : window.open(u, '_blank', 'noopener');
+
+// Pencatatan pesanan ke Google Sheets lewat Google Apps Script (gratis, tanpa API key berbayar).
+// Pengaturan: admin.sheets = { enabled: true, url: "https://script.google.com/macros/s/.../exec" }
+// Pengiriman memakai sendBeacon / fetch no-cors (permintaan sederhana, tanpa preflight CORS), jadi tetap terkirim
+// walau halaman langsung berpindah ke WhatsApp. Respons tidak bisa dibaca; ini murni catatan, bukan bukti pembayaran.
+function sheetsPayload(ev, { order: o, method = '', bank = '', via = '' }) {
+  const c = o.customer, S = o.state;
+  return { v: 1, event: ev, orderId: o.id, site: o.site.id, siteName: o.site.name, created: S.created || Date.now(), ts: Date.now(),
+    customer: { name: c.name.trim(), contact: (c.wa || c.email || '').trim(), social: c.handle.trim() ? c.platform + ': ' + c.handle.trim() : '' },
+    items: o.lines.map(l => ({ pid: l.pid, kid: l.kid, name: l.product.name, pkg: l.pkg.name, qty: l.qty, unit: l.unit, disc: l.disc, total: l.total })),
+    pricing: { base: o.pricing.base, disc: o.pricing.disc, code: o.pricing.code, total: o.pricing.total },
+    payment: { method, bank }, via };
+}
+function sheetsSend(a, payload) {
+  const u = a?.sheets?.url;
+  if (!u || a.sheets.enabled === false || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)) return false;
+  const body = JSON.stringify(payload);
+  try { if (navigator.sendBeacon && navigator.sendBeacon(u, new Blob([body], { type: 'text/plain;charset=UTF-8' }))) return true; } catch {}
+  try { fetch(u, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body }).catch(() => {}); return true; } catch { return false; }
+}
+
 
 
 
@@ -303,9 +360,11 @@ const monogram = b => {
   const s = el('span', 'blogo mono' + shapeCls(b), (b.short || b.name || '?').slice(0, 3).toUpperCase());
   if (b.color) s.style.background = b.color; if (b.textColor) s.style.color = b.textColor; return s;
 };
+// Logo yang diunggah memenuhi badge dengan latar transparan. Latar bantuan (logoBg) dan bentuk (shape) bersifat opsional.
 const bankLogo = b => {
   if (!b.logo) return monogram(b);
-  const w = el('span', 'blogo' + shapeCls(b)), i = el('img'); if (b.color) w.style.background = b.color;
+  const sh = b.shape || (b.logoBg ? 'rounded' : 'none'), w = el('span', 'blogo logo' + (b.logoBg ? ' bg' : '') + (sh === 'none' ? ' raw' : shapeCls({ shape: sh }))), i = el('img');
+  if (b.logoBg) w.style.background = b.logoBgColor || '#ffffff';
   i.alt = ''; i.src = b.logo; i.onerror = () => w.replaceWith(monogram(b)); w.append(i); return w;
 };
 
@@ -320,13 +379,21 @@ const zoomImg = (src, alt) => {
 };
 
 function render(root, args) {
-  const { order: o, admin: a, demo = false, toast = () => {}, showSamples = false, onChange = () => {}, onFinish = () => {}, onRestart = null, returnUrl = null } = args;
+  const { order: o, admin: a, demo = false, toast = () => {}, showSamples = false, onChange = () => {}, onFinish = () => {}, onRestart = null, returnUrl = null, catalog = null, onEvent = () => {} } = args;
   clearInterval(root._faTick);
   const ui = merge(DEFAULT_UI, a.ui || {}), T = ui.texts, F = ui.features, S = o.state, c = o.customer, p = o.pricing, errs = {};
   const tp = 'admin.ui.texts.', redraw = () => render(root, args);
   const tx = (k, tag = 'span', cls) => ed(el(tag, cls, T[k]), tp + k);
   S.created = S.created || Date.now();
   const save = () => { if (!demo) onChange(o); }, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Catat peristiwa pesanan (Google Sheets). Setiap peristiwa dikirim sekali per kombinasi data yang sama.
+  const emit = ev => {
+    if (demo) return; S.logged = S.logged || {};
+    const key = [ev, S.method, S.bank, p.total, S.sentVia].join('|'); if (S.logged[ev] === key) return; S.logged[ev] = key;
+    onEvent(ev, { order: o, method: curM()?.name || '', bank: curB()?.name || '', via: S.sentVia || '' });
+  };
+  // Ubah isi keranjang -> hitung ulang harga; timer dimulai ulang karena total berubah.
+  const editCart = fn => { fn(); refresh(o, catalog, a); S.payStart = null; S.anim = false; redraw(); };
   const to = n => { S.done = false; S.step = n; S.anim = true; redraw(); if (!demo) window.scrollTo({ top: 0, behavior: 'smooth' }); };
   root.replaceChildren(); root.classList.add('fa'); root.classList.toggle('demo', demo); applyUi(root, ui);
   const sample = demo || showSamples, pays = a.payments || [];
@@ -378,7 +445,47 @@ function render(root, args) {
   };
 
   if (S.step === 0) {
-    const f = el('form'); f.noValidate = true; f.onsubmit = e => { e.preventDefault(); if (demo || validate()) to(1); else toast('Lengkapi data dulu.'); };
+    // ---- Keranjang: ubah jumlah, hapus, atau tambah layanan lain ----
+    const all = catalog ? Object.entries(catalog.products).flatMap(([pid, pr]) => Object.entries(pr.packages).filter(([, k]) => !k.noAdd).map(([kid, k]) => ({ pid, kid, pr, k }))) : [];
+    const inCart = (pid, kid) => S.items.find(i => i.pid === pid && i.kid === kid), canAdd = x => { const it = inCart(x.pid, x.kid); return it ? it.qty < maxQtyOf(x.k) : S.items.length < MAX_LINES; };
+    if (F.cart !== false && catalog && (o.lines.length > 1 || o.lines.some(l => l.pkg.maxQty > 1) || all.some(canAdd))) {
+      const cart = el('section', 'cart'), hd = el('div', 'cart-h'), list = el('div', 'cart-l');
+      hd.append(tx('cartTitle', 'span', 'lb'), el('small', '', p.count + ' item'));
+      const priceOf = (unit, du) => { const w = el('span', 'ci-p'); if (du) w.append(el('s', '', rupiah(unit)), ' ' + rupiah(unit - du)); else w.textContent = rupiah(unit); return w; };
+      const qb = (t, label, fn, off) => { const b = el('button', 'qb', t); b.type = 'button'; b.setAttribute('aria-label', label); b.disabled = !!off; b.onclick = fn; return b; };
+      o.lines.forEach(l => {
+        const it = el('div', 'ci'), info = el('div', 'ci-i'), nm = el('strong'), sm = el('small'), ctl = el('div', 'ci-c');
+        nm.append(ed(el('span', '', l.product.name), l.product.path), ' · ', ed(el('span', '', l.pkg.name), l.pkg.path));
+        sm.append(priceOf(l.unit, l.discUnit), l.qty > 1 ? ' × ' + l.qty : ''); info.append(nm, sm);
+        if (l.pkg.maxQty > 1) ctl.append(qb('−', 'Kurangi jumlah', () => editCart(() => { inCart(l.pid, l.kid).qty--; }), l.qty <= 1), el('span', 'qn', String(l.qty)), qb('+', 'Tambah jumlah', () => editCart(() => { inCart(l.pid, l.kid).qty++; }), l.qty >= l.pkg.maxQty));
+        ctl.append(el('b', 'ci-t', rupiah(l.total)));
+        const rm = iconBtn('trash', 'Hapus dari pesanan', () => editCart(() => { S.items = S.items.filter(i => !(i.pid === l.pid && i.kid === l.kid)); }), 'sm'); rm.disabled = o.lines.length < 2; if (rm.disabled) rm.classList.add('off');
+        it.append(info, ctl, rm); list.append(it);
+      });
+      cart.append(hd, list);
+      if (all.some(canAdd)) {
+        const add = el('button', 'addi'), pk = el('div', 'picker' + (S.pickerOpen ? ' open' : '')), lb = el('span', '', S.pickerOpen ? T.closeMore : T.addMore); add.type = 'button'; add.append(icon('plus'), lb);
+        // Buka/tutup daftar: label berganti jadi "Tutup daftar layanan", ikon + berputar jadi ×, dan ada tombol "Selesai" di dasar daftar.
+        const setOpen = v => { S.pickerOpen = v; pk.classList.toggle('open', v); add.classList.toggle('on', v); add.setAttribute('aria-expanded', v); lb.textContent = v ? T.closeMore : T.addMore; };
+        setOpen(!!S.pickerOpen); add.onclick = () => setOpen(!S.pickerOpen);
+        pk.onkeydown = e => { if (e.key === 'Escape') { setOpen(false); add.focus(); } };
+        const groups = {}; all.forEach(x => (groups[x.pid] = groups[x.pid] || { pr: x.pr, rows: [] }).rows.push(x));
+        Object.values(groups).forEach(g => {
+          pk.append(el('div', 'pg', g.pr.name));
+          g.rows.forEach(x => {
+            const r = el('div', 'pr'), t = el('span', 'pt'), d = x.k.discount ? (x.k.discount.type === 'percent' ? Math.round(x.k.price * x.k.discount.value / 100) : Math.min(x.k.discount.value, x.k.price)) : 0;
+            t.append(el('span', '', x.k.name), priceOf(x.k.price, d));
+            const b = el('button', 'pa'); b.type = 'button'; const full = !canAdd(x); b.disabled = full; b.textContent = full ? 'Maks' : inCart(x.pid, x.kid) ? '+1' : 'Tambah';
+            b.onclick = () => editCart(() => { const it = inCart(x.pid, x.kid); if (it) it.qty++; else S.items.push({ pid: x.pid, kid: x.kid, qty: 1 }); });
+            r.append(t, b); pk.append(r);
+          });
+        });
+        const done = el('button', 'pdone', T.doneMore); done.type = 'button'; done.onclick = () => { setOpen(false); add.focus(); add.scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' }); }; pk.append(done);
+        cart.append(add, pk);
+      }
+      box.append(cart);
+    }
+    const f = el('form'); f.noValidate = true; f.onsubmit = e => { e.preventDefault(); if (demo) return to(1); if (validate()) { emit('data'); to(1); } else toast('Lengkapi data dulu.'); };
     f.append(inp('name', 'text', 'namePh', 'name', 'name', c.name, v => { c.name = v; syncBuyer(); }));
     if (F.contact) f.append(inp('contact', 'text', 'contactPh', 'off', 'contact', c.email || c.wa, v => { if (v.includes('@')) { c.email = v; c.wa = ''; } else { c.wa = v; c.email = ''; } }));
     if (F.socialMedia) {
@@ -441,11 +548,12 @@ function render(root, args) {
       if (st === 'done') dot.append(icon('check')); if (dk) ed(sm, tp + dk); tt.append(tx(k, 'strong'), sm); li.append(dot, tt); tl.append(li);
     });
     const rc = el('div', 'recap'), rw = (k, v) => { const r = el('div', 'row'); r.append(k, el('span', 'v', v)); rc.append(r); };
+    o.lines.forEach(l => rw(l.product.name + ' · ' + l.pkg.name + (l.qty > 1 ? ' ×' + l.qty : ''), rupiah(l.total)));
     if (F.orderNumber) rw(tx('orderNo', 'span', 'k'), o.id);
     rw(tx('buyer', 'span', 'k'), c.name.trim() || '-'); rw(tx('totalLabel', 'span', 'k'), rupiah(p.total));
     const acts = el('div', 'acts');
     if (returnUrl || demo || showSamples) {
-      const bk = returnUrl ? el('a', 'btn pri') : el('button', 'btn pri'); if (returnUrl) bk.href = returnUrl; else bk.type = 'button';
+      const bk = returnUrl ? el('a', 'btn pri') : el('button', 'btn pri'); if (returnUrl) { try { const u = new URL(returnUrl); u.searchParams.set('fa_paid', o.id); bk.href = u.href; } catch { bk.href = returnUrl; } } else bk.type = 'button';
       bk.append(icon('home'), tx('backSite'));
       bk.onclick = e => { if (e.target.isContentEditable) { e.preventDefault(); return; } if (demo || !returnUrl) { e.preventDefault(); toast('Demo: kembali ke website.'); return; } onFinish(); };
       acts.append(bk);
@@ -454,10 +562,10 @@ function render(root, args) {
     box.append(tl, rc, acts);
   } else if (expired) {
     // ---- Waktu pembayaran habis ----
-    const ex = el('div', 'okmark exp'); ex.append(icon('clock')); box.prepend(ex);
+    const ex = el('div', 'okmark exp'); ex.append(icon('clock')); box.prepend(ex); emit('kedaluwarsa');
     box.append(primary('newOrder', () => { if (onRestart) onRestart(); else { S.payStart = null; to(0); } }));
   } else {
-    const m = curM(), bk = curB(), pay = payLabel();
+    const m = curM(), bk = curB(), pay = payLabel(); emit('bayar');
     // 1) Total (dengan kode unik, timer, dan tombol salin)
     const hero = el('div', 'paytotal'), amt = el('div', 'amt'), big = el('b'); let tbar = null;
     if (F.timer) {
@@ -505,6 +613,7 @@ function render(root, args) {
     } else dest.append(el('p', 'hint', 'Pilih metode pembayaran di langkah sebelumnya.'));
     // 3) Ringkas data pesanan
     const rc = el('div', 'recap'), rw = (k, v) => { const r = el('div', 'row'); r.append(k, el('span', 'v', v)); rc.append(r); };
+    o.lines.forEach(l => rw(l.product.name + ' · ' + l.pkg.name + (l.qty > 1 ? ' ×' + l.qty : ''), rupiah(l.total)));
     if (F.orderNumber) rw(tx('orderNo', 'span', 'k'), o.id);
     rw(tx('buyer', 'span', 'k'), c.name.trim() || '-');
     // 4) Kanal konfirmasi: hanya ikon. Setelah diklik -> halaman sukses
@@ -515,7 +624,7 @@ function render(root, args) {
       b.onclick = async () => {
         if (demo) return toast('Demo: pesan ' + ch.label + ' siap dikirim.');
         if (ch.copy) toast(await copy(msg) ? 'Pesan disalin, tempel di chat ' + ch.label + '.' : 'Gagal menyalin pesan.');
-        S.done = true; S.sentVia = ch.label; S.sentAt = Date.now(); S.anim = true; save();
+        S.done = true; S.sentVia = ch.label; S.sentAt = Date.now(); S.anim = true; emit('kirim'); save();
         go(ch.url(msg, o)); redraw(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
       row2.append(b);
     });
@@ -527,15 +636,23 @@ function render(root, args) {
   // ---- panel kanan: ringkasan ----
   const side = el('aside', 'side' + (F.collapsibleSummary ? '' : ' static')), tg = el('button', 'sumtoggle'); tg.type = 'button';
   tg.append(el('span', '', T.sumTitle), el('b', '', rupiah(p.total)), icon('chev')); tg.onclick = () => side.classList.toggle('open');
-  const sb = el('div', 'sbody'), d = o.pkg.discount;
+  const sb = el('div', 'sbody');
   const row = (k, v, sub, cls) => { const r = el('div', 'row ' + (cls || '')), l = el('span'), vv = v instanceof Node ? v : el('span', 'v', v);
     l.append(k); if (sub) l.append(sub); vv.classList.add('v'); r.append(l, vv); return r; };
-  const names = el('small'); names.append(ed(el('span', '', o.product.name), o.product.path), ' · ', ed(el('span', '', o.pkg.name), o.pkg.path));
-  sb.append(tx('sumTitle', 'h2'), tx('sumSub', 'p', 'sub'), tx('totalLabel', 'div', 'tl'), el('div', 'big', rupiah(p.total)),
-    row(tx('subtotal'), ed(el('span', '', rupiah(p.base)), o.pkg.pp + '.price'), names));
-  if (F.discount && d) { const dl = el('small'); dl.append(ed(el('span', '', d.label || 'Diskon'), o.pkg.pp + '.discount.label'), ' (',
-      ed(el('span', '', d.type === 'percent' ? String(d.value) : rupiah(d.value)), o.pkg.pp + '.discount.value'), d.type === 'percent' ? '%)' : ')');
-    sb.append(row(tx('discount'), '-' + rupiah(p.disc), dl, 'disc')); }
+  sb.append(tx('sumTitle', 'h2'), tx('sumSub', 'p', 'sub'), tx('totalLabel', 'div', 'tl'), el('div', 'big', rupiah(p.total)));
+  o.lines.forEach((l, i) => {
+    const names = el('small'); names.append(ed(el('span', '', l.product.name), l.product.path), ' · ', ed(el('span', '', l.pkg.name), l.pkg.path));
+    if (l.qty > 1) names.append(' × ' + l.qty);
+    const price = l.qty === 1 ? ed(el('span', '', rupiah(l.base)), l.pkg.pp + '.price') : rupiah(l.base);
+    sb.append(row(i === 0 ? tx('subtotal') : '', price, names));
+  });
+  const dl = o.lines.filter(l => l.discUnit > 0 && l.pkg.discount);
+  if (F.discount && dl.length) {
+    const sm = el('small');
+    if (dl.length === 1) { const d = dl[0].pkg.discount, pp = dl[0].pkg.pp; sm.append(ed(el('span', '', d.label || 'Diskon'), pp + '.discount.label'), ' (', ed(el('span', '', d.type === 'percent' ? String(d.value) : rupiah(d.value)), pp + '.discount.value'), d.type === 'percent' ? '%)' : ')'); }
+    else sm.textContent = [...new Set(dl.map(l => l.pkg.discount.label || 'Diskon'))].join(', ');
+    sb.append(row(tx('discount'), '-' + rupiah(p.disc), sm, 'disc'));
+  }
   if (p.code > 0) sb.append(row(tx('uniqueCode'), '+' + rupiah(p.code)));
   sb.append(el('hr'));
   if (F.orderNumber) sb.append(row(tx('orderNo'), o.id));
@@ -556,6 +673,14 @@ function render(root, args) {
 
 
 const $ = id => document.getElementById(id);
+// Pengaman: demo.html dan js/demo.bundle.js harus berasal dari versi yang sama.
+{ const miss = ['maxq', 'noadd', 'banks'].filter(id => !document.getElementById(id));
+  if (miss.length) {
+    const m = document.createElement('p'); m.setAttribute('role', 'alert');
+    m.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:999;margin:0;padding:14px 18px;border-radius:12px;background:#b91c1c;color:#fff;font:600 14px/1.5 system-ui,sans-serif';
+    m.textContent = 'Versi file tidak cocok: demo.html lama dipakai bersama JS baru. Timpa demo.html beserta folder js, css, dan config dengan versi terbaru dari zip, lalu tekan Ctrl+F5.';
+    document.body.append(m); throw new Error('demo.html tidak cocok dengan demo.bundle.js, elemen hilang: ' + miss.join(', '));
+  } }
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 6);
 // Format lama (bank/number/holder langsung di metode) diubah menjadi daftar banks agar bisa diatur di tab Bank.
 const norm = a => { for (const m of a.payments || []) if (m.type === 'account' && !Array.isArray(m.banks)) {
@@ -580,9 +705,9 @@ function draw() {
   fill($('pid'), Object.entries(P).map(([k, v]) => [k, v.name]), pid);
   fill($('kid'), Object.entries(K).map(([k, v]) => [k, v.name]), kid);
   if (!pid || !kid) { view.textContent = 'Tambahkan produk dan paket di tab Produk.'; return; }
-  const o = prev = buildOrder(S.site, S.catalog, pid, kid, prev, S.admin);
-  render(view, { order: o, admin: S.admin, demo: true, toast });
-  $('disc').checked = !!K[kid].discount;
+  const o = prev = buildOrder(S.site, S.catalog, { items: [{ pid, kid, qty: 1 }], sig: `${pid}.${kid}.1` }, prev, S.admin);
+  render(view, { order: o, admin: S.admin, catalog: S.catalog, demo: true, toast });
+  $('disc').checked = !!K[kid].discount; if (document.activeElement !== $('maxq')) $('maxq').value = K[kid].maxQty || 1; $('noadd').checked = !!K[kid].noAdd;
   view.classList.toggle('editing', edit);
   if (edit) view.querySelectorAll('[data-path]').forEach(e => { e.contentEditable = 'plaintext-only'; if (e.contentEditable !== 'plaintext-only') e.contentEditable = 'true'; });
   document.querySelectorAll('#stp button').forEach(b => b.classList.toggle('on', +b.dataset.s === (o.state.done ? 3 : o.state.step)));
@@ -625,7 +750,7 @@ function build() {
 }
 
 // ================= Tab Bank: daftar bank (urut, sembunyi, hapus/tambah, logo, warna, bentuk) =================
-const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape'], bkOpen = new Set();
+const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape', 'logoBg', 'logoBgColor'], bkOpen = new Set();
 const accIdxs = () => S.admin.payments.map((p, i) => p.type === 'account' ? i : -1).filter(i => i >= 0);
 const tplBanks = id => init().admin.payments.find(p => p.id === id)?.banks || [];
 
@@ -692,7 +817,7 @@ function bkCard(b, p, j, m) {
   body.append(el('h3', '', 'Logo'));
   const ur = el('div', 'ur'), fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.hidden = true;
   const ub = btn('btn sm', 'upload', 'Unggah logo', () => fi.click()); ub.append(' Unggah logo');
-  fi.onchange = async () => { const f = fi.files[0]; if (!f) return; try { b.logo = await bkFile(f); b.color = ''; bkOpen.add(b.id); bkBuild(); draw(); toast('Logo dipasang. Warna shape dikosongkan agar logo tampil di latar putih.'); } catch (e) { toast(e.message); } fi.value = ''; };
+  fi.onchange = async () => { const f = fi.files[0]; if (!f) return; try { b.logo = await bkFile(f); delete b.logoBg; bkOpen.add(b.id); bkBuild(); draw(); toast('Logo dipasang dengan latar transparan. Aktifkan "Latar bantuan" bila perlu.'); } catch (e) { toast(e.message); } fi.value = ''; };
   ur.append(ub, fi);
   if (b.logo) ur.append(btn('btn sm', null, 'Hapus logo', () => { delete b.logo; bkBuild(); draw(); })), ur.lastChild.textContent = 'Hapus logo';
   body.append(ur);
@@ -703,8 +828,14 @@ function bkCard(b, p, j, m) {
   body.append(el('h3', '', 'Tampilan badge'));
   const col = (label, path, def) => { const w = el('div', 'cr'), i = el('input'); i.type = 'color'; i.dataset.def = def; i.value = get(path) || def; live(path, i, 'input', x => x.value);
     const r = btn('btn sm', null, 'Kembalikan ke default', () => { put(path, ''); i.value = def; paint(); draw(); }); r.textContent = 'Default'; w.append(el('span', '', label), i, r); body.append(w); };
-  col('Warna shape (latar)', p + '.color', b.logo ? '#ffffff' : '#52525b'); col('Warna teks', p + '.textColor', '#ffffff');
-  const sw2 = el('label', 'tf'), sel = el('select'); [['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || 'rounded') === v; sel.append(o); });
+  if (!b.logo) { col('Warna shape (latar)', p + '.color', '#52525b'); col('Warna teks', p + '.textColor', '#ffffff'); }
+  else {
+    const lw = el('label', 'swt'), li = el('input'); li.type = 'checkbox'; li.checked = !!b.logoBg; lw.append('Latar bantuan di belakang logo', li); body.append(lw);
+    li.onchange = () => { if (li.checked) b.logoBg = true; else delete b.logoBg; bkOpen.add(b.id); bkBuild(); draw(); };
+    if (b.logoBg) col('Warna latar bantuan', p + '.logoBgColor', '#ffffff');
+  }
+  const sw2 = el('label', 'tf'), sel = el('select'), shDef = b.logo && !b.logoBg ? 'none' : 'rounded';
+  [...(b.logo ? [['none', 'Mengikuti logo (tanpa dipotong)']] : []), ['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || shDef) === v; sel.append(o); });
   live(p + '.shape', sel, 'change', x => x.value); sw2.append('Bentuk', sel); body.append(sw2);
   sw(body, 'Contoh (tidak tampil di checkout asli)', p + '.sample');
   const rs = btn('btn sm', null, 'Reset gaya bank ini', () => { const t = tplBanks(m.id).find(x => x.id === b.id); for (const k of BK_STYLE) { if (t && t[k] !== undefined) b[k] = t[k]; else delete b[k]; } bkBuild(); draw(); toast('Gaya bank dikembalikan ke template.'); });
@@ -750,6 +881,8 @@ $('pid').onchange = e => { pid = e.target.value; kid = ''; prev = keep(); draw()
 $('kid').onchange = e => { kid = e.target.value; prev = keep(); draw(); };
 $('disc').onchange = e => { const k = pkgs()[kid]; if (e.target.checked) k.discount = k.discount || { type: 'percent', value: 10, label: 'Diskon' }; else delete k.discount; redo(); };
 $('addp').onclick = () => { pid = uid('produk'); kid = 'paket-1'; S.catalog.products[pid] = { name: 'Produk Baru', packages: { 'paket-1': { name: 'Paket Baru', price: 100000 } } }; redo(); };
+$('maxq').oninput = e => { const k = pkgs()[kid], v = Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1)); if (v > 1) k.maxQty = v; else delete k.maxQty; draw(); };
+$('noadd').onchange = e => { const k = pkgs()[kid]; if (e.target.checked) k.noAdd = true; else delete k.noAdd; draw(); };
 $('addk').onclick = () => { kid = uid('paket'); pkgs()[kid] = { name: 'Paket Baru', price: 100000 }; redo(); };
 $('delk').onclick = () => { if (Object.keys(pkgs()).length < 2) return toast('Sisakan minimal satu paket.'); delete pkgs()[kid]; kid = ''; redo(); };
 $('reset').onclick = () => { S = init(); pid = 'logo-design'; kid = 'premium'; prev = {}; redo(); toast('Dikembalikan ke config tersimpan.'); };

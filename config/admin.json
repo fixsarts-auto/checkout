@@ -127,7 +127,8 @@
       "collapsibleSummary": true,
       "animations": true,
       "uniqueCode": true,
-      "timer": true
+      "timer": true,
+      "cart": true
     },
     "texts": {
       "step1": "Data",
@@ -188,7 +189,11 @@
       "accLink": "Link pembayaran",
       "openLink": "Buka tautan pembayaran",
       "approx": "Perkiraan",
-      "usdNote": "Nominal USD hanya perkiraan karena PayPal tidak menerima Rupiah."
+      "usdNote": "Nominal USD hanya perkiraan karena PayPal tidak menerima Rupiah.",
+      "cartTitle": "Pesananmu",
+      "addMore": "Tambah layanan lain",
+      "closeMore": "Tutup daftar layanan",
+      "doneMore": "Selesai"
     },
     "colors": {
       "dark": {
@@ -222,5 +227,9 @@
     "min": 1,
     "max": 999
   },
-  "usdRate": 16500
+  "usdRate": 16500,
+  "sheets": {
+    "enabled": true,
+    "url": ""
+  }
 }

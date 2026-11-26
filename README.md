@@ -51,3 +51,29 @@ Mode alternatif (terdaftar): tambahkan di `sites` pada `config/sites.json`, lalu
 - **Halaman sukses + timeline**: muncul setelah pembeli menekan kanal konfirmasi. Pesanan berjalan tersimpan di browser (maks. 72 jam) sehingga aman bila pembeli kembali dari WhatsApp. Tombol "Kembali ke website" menuju halaman asal tombol Beli (parameter `ret`, hanya origin di `allowedOrigins`) dan membersihkan data pesanan.
 - **E-Wallet & PayPal**: metode bertipe `account` dengan `numberLabel` (mis. "No. HP"). Item boleh berisi `url` (PayPal.me) dan `"currency": "USD"`; nominal dikonversi memakai `usdRate` (perkiraan, ubah manual sesuai kurs).
 - Bank/e-wallet bertanda `"hidden": true` tidak tampil (mis. BNI yang sedang tidak aktif); aktifkan lewat ikon mata di editor.
+
+## Beberapa item dalam satu pesanan
+- **Dari website:** `?items=produk:paket:jumlah,produk:paket:jumlah` pada URL checkout, atau pakai `fa-checkout.js`:
+  `<a data-fa-items="logo-design:premium:1,social-kit:basic:2">`, atau keranjang di website:
+  `<button data-fa-add="logo-design:premium">Tambah</button>` + `<a data-fa-cart>Checkout (<span data-fa-cart-count>0</span>)</a>`.
+  Keranjang website tersimpan di browser pengunjung dan dikosongkan otomatis setelah pembeli menekan "Kembali ke website".
+- **Di halaman checkout (langkah Data):** pembeli bisa mengubah jumlah, menghapus item, dan menambah layanan lain dari katalog.
+- **Katalog:** `"maxQty": 5` pada paket mengizinkan beli sampai 5 unit (bawaan 1 = satu unit saja). `"noAdd": true` menyembunyikan paket dari daftar "Tambah layanan lain". Bisa diatur di `demo.html` tab Produk. Fitur dimatikan lewat fitur `cart`.
+- Diskon dihitung per unit lalu dikali jumlah. Harga SELALU dihitung dari katalog; angka di URL hanya dibaca sebagai ID dan jumlah.
+
+## Pencatatan ke Google Sheets (gratis, tanpa API key berbayar)
+Setiap pesanan menjadi satu baris di sheet **Pesanan** (rincian item di sheet **Item**) dan diperbarui otomatis:
+`Data Diisi` -> `Menunggu Pembayaran` -> `Bukti Dikirim` (atau `Kedaluwarsa`). Status `Lunas`, `Diproses`, `Selesai`, `Batal` kamu isi **manual**
+lewat dropdown di kolom Status dan tidak pernah ditimpa checkout. Kolom "Cek" menandai total yang tidak cocok.
+
+Pasang (sekali):
+1. Buat Google Sheet baru. Menu **Extensions -> Apps Script**, hapus isi bawaan, tempel seluruh isi `apps-script/Code.gs`.
+2. (Opsional) isi `NOTIFY_EMAIL` di bagian atas skrip untuk menerima email saat bukti dikirim. **Project Settings** -> Time zone: `Asia/Jakarta`.
+3. Pilih fungsi `setup` lalu **Run** (izinkan akses). Ini membuat sheet, format kolom, dan dropdown status.
+4. **Deploy -> New deployment -> Web app**: *Execute as* **Me**, *Who has access* **Anyone**. Salin URL yang berakhiran `/exec`.
+5. Tempel URL ke `config/admin.js` pada `"sheets": { "enabled": true, "url": "..." }` lalu unggah ke repo.
+6. Setelah mengubah `Code.gs`: **Deploy -> Manage deployments -> Edit -> Version: New version** (URL tetap sama).
+
+Catatan: URL web app bersifat publik, jadi isi sheet adalah **catatan**, bukan bukti pembayaran. Tetap cocokkan dengan mutasi rekening/e-wallet
+sebelum menandai Lunas. Data pembeli (nama, kontak) masuk ke sheet milikmu sendiri. Pengiriman memakai `sendBeacon`/`fetch no-cors`
+sehingga tetap terkirim walau halaman berpindah ke WhatsApp; respons tidak dibaca. Kosongkan `url` atau set `enabled: false` untuk mematikan.

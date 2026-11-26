@@ -6,6 +6,14 @@ import { toggleTheme } from './theme.js';
 import { DEFAULTS, DEFAULT_UI, merge } from './defaults.js';
 
 const $ = id => document.getElementById(id);
+// Pengaman: demo.html dan js/demo.bundle.js harus berasal dari versi yang sama.
+{ const miss = ['maxq', 'noadd', 'banks'].filter(id => !document.getElementById(id));
+  if (miss.length) {
+    const m = document.createElement('p'); m.setAttribute('role', 'alert');
+    m.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:999;margin:0;padding:14px 18px;border-radius:12px;background:#b91c1c;color:#fff;font:600 14px/1.5 system-ui,sans-serif';
+    m.textContent = 'Versi file tidak cocok: demo.html lama dipakai bersama JS baru. Timpa demo.html beserta folder js, css, dan config dengan versi terbaru dari zip, lalu tekan Ctrl+F5.';
+    document.body.append(m); throw new Error('demo.html tidak cocok dengan demo.bundle.js, elemen hilang: ' + miss.join(', '));
+  } }
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 6);
 // Format lama (bank/number/holder langsung di metode) diubah menjadi daftar banks agar bisa diatur di tab Bank.
 const norm = a => { for (const m of a.payments || []) if (m.type === 'account' && !Array.isArray(m.banks)) {
@@ -30,9 +38,9 @@ function draw() {
   fill($('pid'), Object.entries(P).map(([k, v]) => [k, v.name]), pid);
   fill($('kid'), Object.entries(K).map(([k, v]) => [k, v.name]), kid);
   if (!pid || !kid) { view.textContent = 'Tambahkan produk dan paket di tab Produk.'; return; }
-  const o = prev = buildOrder(S.site, S.catalog, pid, kid, prev, S.admin);
-  render(view, { order: o, admin: S.admin, demo: true, toast });
-  $('disc').checked = !!K[kid].discount;
+  const o = prev = buildOrder(S.site, S.catalog, { items: [{ pid, kid, qty: 1 }], sig: `${pid}.${kid}.1` }, prev, S.admin);
+  render(view, { order: o, admin: S.admin, catalog: S.catalog, demo: true, toast });
+  $('disc').checked = !!K[kid].discount; if (document.activeElement !== $('maxq')) $('maxq').value = K[kid].maxQty || 1; $('noadd').checked = !!K[kid].noAdd;
   view.classList.toggle('editing', edit);
   if (edit) view.querySelectorAll('[data-path]').forEach(e => { e.contentEditable = 'plaintext-only'; if (e.contentEditable !== 'plaintext-only') e.contentEditable = 'true'; });
   document.querySelectorAll('#stp button').forEach(b => b.classList.toggle('on', +b.dataset.s === (o.state.done ? 3 : o.state.step)));
@@ -75,7 +83,7 @@ function build() {
 }
 
 // ================= Tab Bank: daftar bank (urut, sembunyi, hapus/tambah, logo, warna, bentuk) =================
-const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape'], bkOpen = new Set();
+const BK_STYLE = ['short', 'logo', 'color', 'textColor', 'shape', 'logoBg', 'logoBgColor'], bkOpen = new Set();
 const accIdxs = () => S.admin.payments.map((p, i) => p.type === 'account' ? i : -1).filter(i => i >= 0);
 const tplBanks = id => init().admin.payments.find(p => p.id === id)?.banks || [];
 
@@ -142,7 +150,7 @@ function bkCard(b, p, j, m) {
   body.append(el('h3', '', 'Logo'));
   const ur = el('div', 'ur'), fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.hidden = true;
   const ub = btn('btn sm', 'upload', 'Unggah logo', () => fi.click()); ub.append(' Unggah logo');
-  fi.onchange = async () => { const f = fi.files[0]; if (!f) return; try { b.logo = await bkFile(f); b.color = ''; bkOpen.add(b.id); bkBuild(); draw(); toast('Logo dipasang. Warna shape dikosongkan agar logo tampil di latar putih.'); } catch (e) { toast(e.message); } fi.value = ''; };
+  fi.onchange = async () => { const f = fi.files[0]; if (!f) return; try { b.logo = await bkFile(f); delete b.logoBg; bkOpen.add(b.id); bkBuild(); draw(); toast('Logo dipasang dengan latar transparan. Aktifkan "Latar bantuan" bila perlu.'); } catch (e) { toast(e.message); } fi.value = ''; };
   ur.append(ub, fi);
   if (b.logo) ur.append(btn('btn sm', null, 'Hapus logo', () => { delete b.logo; bkBuild(); draw(); })), ur.lastChild.textContent = 'Hapus logo';
   body.append(ur);
@@ -153,8 +161,14 @@ function bkCard(b, p, j, m) {
   body.append(el('h3', '', 'Tampilan badge'));
   const col = (label, path, def) => { const w = el('div', 'cr'), i = el('input'); i.type = 'color'; i.dataset.def = def; i.value = get(path) || def; live(path, i, 'input', x => x.value);
     const r = btn('btn sm', null, 'Kembalikan ke default', () => { put(path, ''); i.value = def; paint(); draw(); }); r.textContent = 'Default'; w.append(el('span', '', label), i, r); body.append(w); };
-  col('Warna shape (latar)', p + '.color', b.logo ? '#ffffff' : '#52525b'); col('Warna teks', p + '.textColor', '#ffffff');
-  const sw2 = el('label', 'tf'), sel = el('select'); [['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || 'rounded') === v; sel.append(o); });
+  if (!b.logo) { col('Warna shape (latar)', p + '.color', '#52525b'); col('Warna teks', p + '.textColor', '#ffffff'); }
+  else {
+    const lw = el('label', 'swt'), li = el('input'); li.type = 'checkbox'; li.checked = !!b.logoBg; lw.append('Latar bantuan di belakang logo', li); body.append(lw);
+    li.onchange = () => { if (li.checked) b.logoBg = true; else delete b.logoBg; bkOpen.add(b.id); bkBuild(); draw(); };
+    if (b.logoBg) col('Warna latar bantuan', p + '.logoBgColor', '#ffffff');
+  }
+  const sw2 = el('label', 'tf'), sel = el('select'), shDef = b.logo && !b.logoBg ? 'none' : 'rounded';
+  [...(b.logo ? [['none', 'Mengikuti logo (tanpa dipotong)']] : []), ['rounded', 'Persegi membulat'], ['circle', 'Lingkaran'], ['square', 'Persegi']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; o.selected = (b.shape || shDef) === v; sel.append(o); });
   live(p + '.shape', sel, 'change', x => x.value); sw2.append('Bentuk', sel); body.append(sw2);
   sw(body, 'Contoh (tidak tampil di checkout asli)', p + '.sample');
   const rs = btn('btn sm', null, 'Reset gaya bank ini', () => { const t = tplBanks(m.id).find(x => x.id === b.id); for (const k of BK_STYLE) { if (t && t[k] !== undefined) b[k] = t[k]; else delete b[k]; } bkBuild(); draw(); toast('Gaya bank dikembalikan ke template.'); });
@@ -200,6 +214,8 @@ $('pid').onchange = e => { pid = e.target.value; kid = ''; prev = keep(); draw()
 $('kid').onchange = e => { kid = e.target.value; prev = keep(); draw(); };
 $('disc').onchange = e => { const k = pkgs()[kid]; if (e.target.checked) k.discount = k.discount || { type: 'percent', value: 10, label: 'Diskon' }; else delete k.discount; redo(); };
 $('addp').onclick = () => { pid = uid('produk'); kid = 'paket-1'; S.catalog.products[pid] = { name: 'Produk Baru', packages: { 'paket-1': { name: 'Paket Baru', price: 100000 } } }; redo(); };
+$('maxq').oninput = e => { const k = pkgs()[kid], v = Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1)); if (v > 1) k.maxQty = v; else delete k.maxQty; draw(); };
+$('noadd').onchange = e => { const k = pkgs()[kid]; if (e.target.checked) k.noAdd = true; else delete k.noAdd; draw(); };
 $('addk').onclick = () => { kid = uid('paket'); pkgs()[kid] = { name: 'Paket Baru', price: 100000 }; redo(); };
 $('delk').onclick = () => { if (Object.keys(pkgs()).length < 2) return toast('Sisakan minimal satu paket.'); delete pkgs()[kid]; kid = ''; redo(); };
 $('reset').onclick = () => { S = init(); pid = 'logo-design'; kid = 'premium'; prev = {}; redo(); toast('Dikembalikan ke config tersimpan.'); };

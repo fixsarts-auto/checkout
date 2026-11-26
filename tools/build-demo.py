@@ -3,7 +3,7 @@
 #   python tools/build-demo.py
 import re, pathlib
 J = pathlib.Path(__file__).resolve().parent.parent / 'js'
-LIB = ['theme', 'icons', 'pricing', 'validators', 'defaults', 'catalog', 'message', 'render']
+LIB = ['theme', 'icons', 'pricing', 'validators', 'defaults', 'catalog', 'message', 'sheets', 'render']
 for out_name, entry in [('app', 'main'), ('demo', 'demo')]:
     out = []
     for n in LIB + [entry]:

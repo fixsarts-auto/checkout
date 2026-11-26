@@ -6,8 +6,8 @@ export function buildMessage(o, a, pay = '') {
   const c = o.customer, p = o.pricing;
   return ['Halo Admin ' + a.brand + ', saya sudah melakukan pembayaran.', '',
     `No. Pesanan: ${o.id}`, `Website: ${o.site.name === o.site.id ? o.site.id : o.site.name + ' (' + o.site.id + ')'}`,
-    `Produk: ${o.product.name} [${o.product.id}]`, `Paket: ${o.pkg.name} [${o.pkg.id}]`,
-    `Harga: ${rupiah(p.base)}`, `Diskon: -${rupiah(p.disc)}`, p.code > 0 ? `Kode unik: ${rupiah(p.code)}` : null, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
+    'Pesanan:', ...o.lines.map((l, i) => `${i + 1}. ${l.product.name} · ${l.pkg.name}${l.qty > 1 ? ' ×' + l.qty : ''} = ${rupiah(l.base)} [${l.pid}/${l.kid}]`),
+    `Subtotal: ${rupiah(p.base)}`, p.disc > 0 ? `Diskon: -${rupiah(p.disc)}` : null, p.code > 0 ? `Kode unik: ${rupiah(p.code)}` : null, `Total Bayar: ${rupiah(p.total)}`, pay ? `Metode: ${pay}` : null, '',
     `Nama: ${c.name.trim() || '-'}`,
     c.wa.trim() ? `WhatsApp: ${c.wa.trim()}` : null,
     c.email.trim() ? `Email: ${c.email.trim()}` : null,
