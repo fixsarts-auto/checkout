@@ -1,8 +1,10 @@
 {
   "allowedOrigins": [
     "https://fixsarts-auto.github.io",
-    "https://designjoomax.github.io"
+    "https://designjoomax.github.io",
+    "https://studio.fixs-arts.workers.dev"
   ],
+
   "sites": {
     "demo": {
       "name": "Demo Store",
