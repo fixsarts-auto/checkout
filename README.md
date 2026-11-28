@@ -1,5 +1,150 @@
-# checkout
-Centralized Checkout & Payment System
+
+# Fixs.Arts Checkout
+
+Sistem checkout terpusat untuk website statis (GitHub Pages). Website penjualan hanya memasang satu script dan tombol;
+harga selalu dibaca dari file katalog `products.json` milik website itu, bukan dari tombol atau URL.
+
+**Daftar isi:** [Prompt untuk Claude](#prompt-untuk-claude-hubungkan-website-lain-ke-checkout) ·
+[Menghubungkan website](#menghubungkan-website-penjualan-folder-bersarang-didukung) ·
+[Beberapa item](#beberapa-item-dalam-satu-pesanan) · [Fitur lanjutan](#fitur-checkout-lanjutan) ·
+[Bank & e-wallet](#mengatur-bank-lewat-editor-demohtml-tab-bank) · [Google Sheets](#pencatatan-ke-google-sheets-gratis-tanpa-api-key-berbayar)
+
+## Prompt untuk Claude: hubungkan website lain ke checkout
+
+Pakai ini kalau kamu mau Claude merevisi website lain supaya ikut sistem checkout ini.
+
+**Cara pakai:** salin salah satu prompt di bawah (tombol copy di pojok kanan kode), isi bagian `<<...>>`, lalu kirim ke Claude
+**bersama file HTML website** yang mau direvisi (dan daftar layanan + harga). Setelah Claude selesai, ikuti "Checklist setelah revisi" di bawah prompt.
+
+### Prompt A: integrasi lengkap
+
+````text
+Kamu adalah developer front-end. Revisi website saya supaya terhubung ke sistem checkout Fixs.Arts.
+Jangan mengubah desain, warna, tata letak, animasi, atau teks yang tidak berkaitan. Jangan menambah library/framework.
+Pertahankan kode yang sudah ada dan hanya ubah yang perlu.
+
+== DATA WEBSITE ==
+- Origin website (skema + domain, tanpa path): <<mis. https://namaakun.github.io>>
+- Folder halaman penjualan di repo: <<mis. /nama-repo/  atau  /nama-repo/Section/jadwal-kerja/>>
+- Layanan dan harga (rupiah, bilangan bulat):
+  <<Layanan A: Paket Basic Rp150.000, Paket Premium Rp400.000 (diskon 10% "Promo Launching")>>
+  <<Layanan B: Paket Starter Rp250.000>>
+- Paket yang boleh dibeli lebih dari 1 unit (beserta maksimalnya): <<atau tulis "tidak ada">>
+- Paket yang tidak boleh muncul di daftar "Tambah layanan lain" di checkout: <<atau "tidak ada">>
+- Mode tombol yang diinginkan: <<A) beli langsung 1 item | B) keranjang di website (beberapa item) | C) keduanya>>
+
+== SISTEM CHECKOUT (WAJIB DIIKUTI PERSIS) ==
+Checkout berada di https://fixsarts-auto.github.io/checkout/ dan dipakai lewat script:
+
+1) Pasang SEKALI per halaman yang punya tombol beli, sebelum </body>:
+   <script src="https://fixsarts-auto.github.io/checkout/fa-checkout.js" defer></script>
+
+2) Beli langsung satu item. JANGAN isi href manual, script mengisinya otomatis:
+   <a data-fa-product="id-produk" data-fa-package="id-paket">Beli</a>
+
+3) Beberapa item sekaligus (format produk:paket:jumlah, pisahkan koma):
+   <a data-fa-items="id-produk:id-paket:1,id-produk2:id-paket2:2">Beli paket gabungan</a>
+
+4) Keranjang di website (tersimpan di browser pengunjung):
+   <button data-fa-add="id-produk:id-paket" data-fa-qty="1">Tambah ke pesanan</button>
+   <a data-fa-cart>Checkout (<span data-fa-cart-count>0</span>)</a>
+   Tombol yang baru ditekan otomatis mendapat class "fa-added" selama 1,2 detik; tautan keranjang kosong mendapat class
+   "fa-empty". Beri gaya CSS untuk keduanya bila perlu. Keranjang dikosongkan otomatis setelah pembeli selesai.
+
+5) Aturan ID (produk dan paket): huruf kecil a-z, angka, dan tanda minus, 1 sampai 40 karakter. Contoh: logo-design, premium.
+   ID di tombol HARUS sama persis dengan ID di katalog.
+
+6) Harga TIDAK PERNAH dikirim lewat tombol atau URL. Checkout menghitung harga dari katalog. Harga yang tampil di HTML hanya
+   tampilan, dan angkanya HARUS sama dengan katalog.
+
+== FILE KATALOG ==
+Buat file data/products.json di folder halaman penjualan. Checkout mencari katalog dari folder halaman naik ke folder induk,
+urutannya: <folder>/data/products.json, lalu <folder>/products.json, lalu folder di atasnya. Yang paling dalam dipakai lebih
+dulu, jadi satu katalog bersama boleh ditaruh di folder induk. Format:
+
+{
+  "version": 1,
+  "currency": "IDR",
+  "siteName": "Nama Website",
+  "products": {
+    "id-produk": {
+      "name": "Nama Layanan",
+      "packages": {
+        "id-paket": {
+          "name": "Nama Paket",
+          "price": 150000,
+          "maxQty": 1,
+          "noAdd": false,
+          "discount": { "type": "percent", "value": 10, "label": "Promo Launching" }
+        }
+      }
+    }
+  }
+}
+
+Aturan katalog: currency harus "IDR". price bilangan bulat >= 0. discount (opsional) type "percent" (0 sampai 100) atau
+"amount" (tidak boleh melebihi price), dihitung per unit. maxQty (opsional) 1 sampai 99, bawaan 1. noAdd (opsional) true =
+sembunyikan dari "Tambah layanan lain". siteName opsional. Maksimal 20 baris item per pesanan.
+
+== YANG HARUS KAMU HASILKAN ==
+1. Semua file HTML yang diubah (lengkap, siap tempel) atau diff yang jelas per file.
+2. File data/products.json lengkap, dengan path lengkapnya di repo.
+3. Langkah untuk repo checkout: tambahkan origin website ke config/sites.json pada "allowedOrigins"
+   (origin = skema + domain, huruf kecil, tanpa garis miring di akhir, tanpa path). Tulis baris JSON-nya.
+4. Jika website punya Content-Security-Policy, tambahkan https://fixsarts-auto.github.io ke script-src
+   (dan ke connect-src bila dibatasi). Jangan pakai inline script bila CSP melarangnya.
+5. Checklist uji singkat sesuai website ini.
+
+== ATURAN TAMBAHAN ==
+- Jangan menulis URL checkout manual di href tombol. Biarkan fa-checkout.js yang mengisinya.
+- Jangan membuat sistem pembayaran, form pembeli, atau perhitungan harga sendiri di website. Semua itu dikerjakan checkout.
+- Jika nama folder punya spasi atau huruf besar (mis. "Jadwal Kerja"), tetap didukung, tapi sarankan memakai huruf kecil
+  tanpa spasi karena GitHub Pages membedakan huruf besar/kecil.
+- Jika ada hal yang kurang jelas (ID, harga, atau folder), tanyakan dulu dalam satu daftar pertanyaan sebelum menulis kode.
+````
+
+### Prompt B: audit website yang sudah terpasang
+
+Pakai ini kalau tombol tidak berfungsi atau mau memastikan integrasi sudah benar.
+
+````text
+Periksa integrasi checkout Fixs.Arts di website saya (file terlampir). Jangan ubah desain. Cek satu per satu dan laporkan
+hasilnya sebagai daftar LOLOS / GAGAL beserta perbaikannya:
+
+1. Script https://fixsarts-auto.github.io/checkout/fa-checkout.js ada sekali per halaman, memakai defer, dan dimuat sebelum </body>.
+2. Setiap tombol beli memakai data-fa-product + data-fa-package, atau data-fa-items, atau data-fa-add. Tidak ada href checkout manual.
+3. Semua ID memakai huruf kecil, angka, dan minus saja (1 sampai 40 karakter), dan SAMA PERSIS dengan ID di data/products.json.
+4. data/products.json valid: version 1, currency "IDR", price bilangan bulat, discount percent 0 sampai 100 atau amount <= price,
+   maxQty 1 sampai 99, tidak ada koma berlebih atau kutip tidak lengkap.
+5. Harga yang tampil di HTML sama dengan harga di katalog (setelah diskon).
+6. Lokasi katalog benar: <folder halaman>/data/products.json atau <folder halaman>/products.json atau di folder induk.
+7. Origin website sudah ada di allowedOrigins pada config/sites.json repo checkout.
+8. Jika ada Content-Security-Policy, https://fixsarts-auto.github.io diizinkan di script-src (dan connect-src bila dibatasi).
+9. Jika memakai keranjang: ada elemen data-fa-cart dan data-fa-cart-count, dan gaya untuk class fa-added dan fa-empty.
+
+Di akhir, tulis ringkasan: apa yang sudah benar, apa yang harus diperbaiki (urut dari yang paling penting), dan kode perbaikannya.
+````
+
+### Checklist setelah revisi (kamu kerjakan sendiri)
+
+1. Upload `data/products.json` dan file HTML yang direvisi ke repo website.
+2. Di repo **checkout**, tambahkan origin website ke `config/sites.json` pada `allowedOrigins`, lalu upload.
+3. Buka website (online, bukan dari folder komputer), klik tombol Beli, dan pastikan checkout terbuka dengan produk dan harga yang benar.
+4. Jika memakai keranjang: tambah dua item, buka checkout, ubah jumlah, selesaikan sampai halaman sukses, klik "Kembali ke website", dan pastikan jumlah keranjang kembali 0.
+
+### Pesan error yang sering muncul
+
+| Pesan di checkout | Penyebab | Solusi |
+|---|---|---|
+| Website belum terdaftar di Fixs.Arts Checkout | Origin website belum ada di `allowedOrigins` | Tambahkan di `config/sites.json` (skema + domain, tanpa path dan tanpa `/` di akhir) |
+| Katalog produk tidak ditemukan | `products.json` tidak ada di folder halaman atau folder induknya | Taruh di `<folder>/data/products.json`; cek huruf besar/kecil nama folder |
+| Produk atau paket tidak ditemukan di katalog website | ID di tombol tidak sama dengan ID di katalog | Samakan persis, huruf kecil semua |
+| Katalog tidak valid: ... | Isi `products.json` melanggar aturan format | Perbaiki bagian yang disebut pada pesan (mis. harga bukan bilangan bulat) |
+| Alamat website tidak valid | Path folder berisi karakter tidak diizinkan atau terlalu dalam (maks. 6 level) | Pakai nama folder sederhana |
+| Tombol Beli tidak berpindah ke checkout | Script belum dimuat atau terblokir CSP | Cek tag script dan CSP website |
+
+> Catatan: membuka halaman langsung dari komputer (`file://`) tidak mengambil katalog asli. Checkout memakai data contoh bawaan
+> (Desain Logo, Social Media Kit). Uji selalu lewat alamat website yang sudah online.
 
 ## Menambah bank & logo
 Di `config/admin.js` (atau lewat `demo.html`), metode `type: "account"` punya daftar `banks`:
